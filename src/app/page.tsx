@@ -5,20 +5,11 @@ import Link from "next/link";
 import { signIn } from "@/services/authService";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from 'next/navigation'
+//import { showAlert, showConfirmation } from "@/utils/alert";
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState({
-    mobile: '',
-    password: '',
-  });
-
-  const handleInputChange = (e: any) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   const router = useRouter();
   const [error, setError] = useState('');
@@ -27,19 +18,26 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation
-    if (!formData.mobile.trim() || !formData.password.trim()) {
-      setError('Please fill in all fields');
-      return;
-    }
-
+  
     setLoading(true);
     setError('');
 
     try {
-      // Pass the form data to signIn function
-      const data = await signIn(formData.mobile, formData.password);
+      if (!username.trim()) 
+      {
+        //showAlert("Warning",  "User ID is required.", "warning");
+        return;
+      }
+      if (!password.trim()) 
+      {
+        //showAlert("Warning",  "Password is required.", "warning");
+        return;
+      }
+      const formData = new FormData();
+
+      formData.append('username', username);
+      formData.append('password', password);
+      const data = await signIn(formData);
       console.log(data.data.access_token);
       
       if (data.success) {
@@ -114,7 +112,7 @@ export default function LoginPage() {
                 {/* Mobile Number Field */}
                 <div>
                   <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-2">
-                    Mobile Number
+                    User ID
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -123,11 +121,11 @@ export default function LoginPage() {
                       </svg>
                     </div>
                     <input
-                      type="tel"
-                      id="mobile"
-                      name="mobile"
-                      value={formData.mobile}
-                      onChange={handleInputChange}
+                      type="text"
+                      id="username"
+                      name="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/70 backdrop-blur-sm hover:bg-white/90"
                       placeholder="Enter your mobile number"
                       required
@@ -151,8 +149,8 @@ export default function LoginPage() {
                       type="password"
                       id="password"
                       name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white/70 backdrop-blur-sm hover:bg-white/90"
                       placeholder="Enter your password"
                       required

@@ -1,4 +1,5 @@
 import api from '../utilis/api';
+import { encodePayload, formDataToObject } from '@/utilis/encodeUtil';
 
 interface ApiResponse {
   success: boolean;
@@ -6,18 +7,23 @@ interface ApiResponse {
   data?: any;
 }
 
-export const signIn = async (username: string, password: string): Promise<ApiResponse> => {
+export const signIn = async (formData: FormData): Promise<ApiResponse> => {
   try {
-    console.log('========Signing in with provided credentials=========');
-    
-    const response = await api.post('/api/auth/login', JSON.stringify({
-      username: username,
-      password: password,
-    }), {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    // Convert FormData → object
+    const payloadObj = formDataToObject(formData);
+
+    // Encode object into Base64 JSON
+    const encodedPayload = encodePayload(payloadObj);
+
+    const response = await api.post(
+                                      '/api/auth/login', 
+                                      { data: encodedPayload }, 
+                                      {
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                        },
+                                      }
+                                    );
 
     return {
       success: true,
