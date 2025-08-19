@@ -2,7 +2,7 @@
 import withAuth from '@/hoc/withAuth';
 import React, { useState, useRef, useEffect } from 'react'
 import { getPriorities} from '@/services/priorityService';
-import {  getLocations } from '@/services/loactionService';
+import { getLocations } from '@/services/locationService'; // Fixed typo
 
 function Create() {
   // Rich text editor state
@@ -63,11 +63,14 @@ function Create() {
         const response = await getPriorities()
 
         if (response.success && response.data && Array.isArray(response.data)) {
+          // Fixed mapping to match your API response structure
           const options = response.data.map((item: any) => ({
-            value: item.id || item.value || item.priority_id,
-            label: item.name || item.label || item.title || item.priority_name
+            value: item.id.toString(), // Convert to string for consistency
+            label: item.priority // Use 'priority' field from your API
           }))
           setPriorityOptions(options)
+        } else {
+          console.error('Invalid priorities response structure:', response)
         }
       } catch (error) {
         console.error('Error fetching priorities:', error)
@@ -82,11 +85,14 @@ function Create() {
         const response = await getLocations()
 
         if (response.success && response.data && Array.isArray(response.data)) {
+          // Fixed mapping to match your API response structure
           const options = response.data.map((item: any) => ({
-            value: item.id || item.value || item.location_id,
-            label: item.name || item.label || item.title || item.location_name
+            value: item.id.toString(), // Convert to string for consistency
+            label: item.location.trim() // Use 'location' field and trim whitespace
           }))
           setLocationOptions(options)
+        } else {
+          console.error('Invalid locations response structure:', response)
         }
       } catch (error) {
         console.error('Error fetching locations:', error)
