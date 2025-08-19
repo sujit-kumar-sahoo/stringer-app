@@ -1,4 +1,4 @@
-import Edit from '../../../../components/Edit'; 
+import Edit from '../../../../components/inputComponent/Edit'; 
 
 export default function EditPage() {
   return <Edit />;

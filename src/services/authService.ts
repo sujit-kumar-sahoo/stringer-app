@@ -37,3 +37,62 @@ export const signIn = async (formData: FormData): Promise<ApiResponse> => {
   }
 };
 
+
+
+
+// Optimized storage helpers
+const getStorageItem = (key: string) => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(key);
+  }
+  return null;
+};
+
+const clearStorage = () => {
+  if (typeof window !== 'undefined') {
+
+    const itemsToRemove = ['token', 'user'];
+    itemsToRemove.forEach(item => {
+      localStorage.removeItem(item);
+    });
+    sessionStorage.clear();
+  }
+};
+
+export const logout = async (): Promise<ApiResponse> => {
+  const token = getStorageItem('token');
+
+  clearStorage();
+  
+ 
+  if (!token) {
+    return { success: true, message: 'Already logged out' };
+  }
+  
+  try {
+    
+    const response = await api.post(
+      '/api/auth/logout',
+      {},
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: 1000, 
+      }
+    );
+
+    return {
+      success: true,
+      message: 'Logged out successfully',
+      data: response.data,
+    };
+  } catch (error: any) {
+    
+    return {
+      success: true, 
+      message: 'Logged out successfully',
+    };
+  }
+};

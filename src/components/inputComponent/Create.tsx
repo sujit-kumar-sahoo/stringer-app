@@ -1,8 +1,10 @@
 'use client'
-
+import withAuth from '@/hoc/withAuth';
 import React, { useState, useRef, useEffect } from 'react'
+import { getPriorities} from '@/services/priorityService';
+import {  getLocations } from '@/services/loactionService';
 
-export default function StoryEditorForm() {
+function Create() {
   // Rich text editor state
   const [editorData, setEditorData] = useState<string>('')
   const [isEditorReady, setIsEditorReady] = useState(false)
@@ -19,13 +21,13 @@ export default function StoryEditorForm() {
   const [tags, setTags] = useState('')
   const [attachments, setAttachments] = useState<FileList | null>(null)
 
-  // Priority options
-  const priorityOptions = [
-    { value: 'low', label: 'Low' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'high', label: 'High' },
-    { value: 'urgent', label: 'Urgent' }
-  ]
+  // Priority state
+  const [priorityOptions, setPriorityOptions] = useState<{value: string, label: string}[]>([])
+  const [isLoadingPriorities, setIsLoadingPriorities] = useState(true)
+
+  // Location state
+  const [locationOptions, setLocationOptions] = useState<{value: string, label: string}[]>([])
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true)
 
   // Content type options
   const contentTypeOptions = [
@@ -52,6 +54,50 @@ export default function StoryEditorForm() {
       document.removeEventListener('selectionchange', handleSelectionChange)
     }
   }, [])
+
+  
+  useEffect(() => {
+    const fetchPriorities = async () => {
+      try {
+        setIsLoadingPriorities(true)
+        const response = await getPriorities()
+
+        if (response.success && response.data && Array.isArray(response.data)) {
+          const options = response.data.map((item: any) => ({
+            value: item.id || item.value || item.priority_id,
+            label: item.name || item.label || item.title || item.priority_name
+          }))
+          setPriorityOptions(options)
+        }
+      } catch (error) {
+        console.error('Error fetching priorities:', error)
+      } finally {
+        setIsLoadingPriorities(false)
+      }
+    }
+
+    const fetchLocations = async () => {
+      try {
+        setIsLoadingLocations(true)
+        const response = await getLocations()
+
+        if (response.success && response.data && Array.isArray(response.data)) {
+          const options = response.data.map((item: any) => ({
+            value: item.id || item.value || item.location_id,
+            label: item.name || item.label || item.title || item.location_name
+          }))
+          setLocationOptions(options)
+        }
+      } catch (error) {
+        console.error('Error fetching locations:', error)
+      } finally {
+        setIsLoadingLocations(false)
+      }
+    }
+
+    fetchPriorities()
+    fetchLocations()
+  }, []) 
 
   const updateActiveFormats = () => {
     const formats = new Set<string>()
@@ -122,37 +168,7 @@ export default function StoryEditorForm() {
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.ctrlKey || e.metaKey) {
-      switch (e.key.toLowerCase()) {
-        case 'b':
-          e.preventDefault()
-          formatText('bold')
-          break
-        case 'i':
-          e.preventDefault()
-          formatText('italic')
-          break
-        case 'u':
-          e.preventDefault()
-          formatText('underline')
-          break
-        case 'z':
-          if (e.shiftKey) {
-            e.preventDefault()
-            formatText('redo')
-          } else {
-            e.preventDefault()
-            formatText('undo')
-          }
-          break
-        case 'y':
-          e.preventDefault()
-          formatText('redo')
-          break
-      }
-    }
-  }
+  
 
   const formatText = (command: string, value?: string) => {
     if (!editorRef.current) return
@@ -250,10 +266,10 @@ export default function StoryEditorForm() {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Header matching file 1 style */}
-        <div className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200 shadow-sm">
+        <div className="sticky top-0 z-20 bg-gray-50 shadow-sm">
           <div className="px-4 py-4">
-            <div className="bg-white rounded-lg shadow-sm border p-4">
-              <div className="animate-pulse">
+            <div className="rounded-lg shadow-sm">
+              <div className="animate-pulse p-6">
                 <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
                 <div className="space-y-4">
                   <div className="flex space-x-4">
@@ -284,9 +300,9 @@ export default function StoryEditorForm() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sticky Header - Matching file 1 design */}
-      <div className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200 shadow-sm">
-        <div className="px-4 py-4">
+      {/* Sticky Header - Fixed positioning and padding */}
+      <div className="sticky top-0 z-20 pb-4">
+        <div className="">
           <div className="bg-white rounded-lg shadow-sm border p-4">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Title */}
@@ -314,8 +330,8 @@ export default function StoryEditorForm() {
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="px-4 py-6">
+      {/* Content Area - Added proper padding and margin */}
+      <div className="pb-8">
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
           {/* Form Fields */}
           <div className="p-6 border-b border-gray-200">
@@ -328,15 +344,21 @@ export default function StoryEditorForm() {
                 <select
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                  disabled={isLoadingPriorities}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm disabled:bg-gray-100"
                 >
-                  <option value="">Select Priority</option>
+                  <option value="">
+                    {isLoadingPriorities ? 'Loading priorities...' : 'Select Priority'}
+                  </option>
                   {priorityOptions.map(option => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </select>
+                {isLoadingPriorities && (
+                  <p className="text-xs text-gray-500 mt-1">Loading priority options...</p>
+                )}
               </div>
 
               {/* Content Type Dropdown */}
@@ -374,18 +396,29 @@ export default function StoryEditorForm() {
                 />
               </div>
 
-              {/* Location Input */}
+              {/* Location Dropdown */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Location
                 </label>
-                <input
-                  type="text"
+                <select
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Enter location"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
+                  disabled={isLoadingLocations}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm disabled:bg-gray-100"
+                >
+                  <option value="">
+                    {isLoadingLocations ? 'Loading locations...' : 'Select Location'}
+                  </option>
+                  {locationOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {isLoadingLocations && (
+                  <p className="text-xs text-gray-500 mt-1">Loading location options...</p>
+                )}
               </div>
             </div>
           </div>
@@ -542,18 +575,17 @@ export default function StoryEditorForm() {
               ref={editorRef}
               contentEditable
               onInput={handleInput}
-              onKeyDown={handleKeyDown}
+             
               onKeyUp={updateActiveFormats}
               onClick={updateActiveFormats}
               suppressContentEditableWarning={true}
-              className="min-h-[150px] p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="min-h-[200px] p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               style={{
                 fontSize: '14px',
                 lineHeight: '1.6',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}
             />
-            
           </div>
 
           {/* Additional Fields */}
@@ -576,7 +608,7 @@ export default function StoryEditorForm() {
             </div>
 
             {/* Attachment Upload */}
-            <div>
+            <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Attachments
               </label>
@@ -617,3 +649,5 @@ export default function StoryEditorForm() {
     </div>
   )
 }
+
+export default withAuth(Create)

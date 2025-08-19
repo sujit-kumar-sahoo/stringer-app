@@ -1,61 +1,64 @@
 'use client';
 import withoutAuth from '@/hoc/withoutAuth';
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useState, useCallback } from "react";
+
 import { signIn } from "@/services/authService";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from 'next/navigation'
-//import { showAlert, showConfirmation } from "@/utils/alert";
 
-export default function LoginPage() {
+function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
-  const router = useRouter();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const router = useRouter();
   const { login } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Preload dashboard route for faster navigation
+  React.useEffect(() => {
+    router.prefetch('/dashboard');
+  }, [router]);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
   
+    if (!username.trim() || !password.trim()) {
+      setError('User ID and Password are required.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      if (!username.trim()) 
-      {
-        //showAlert("Warning",  "User ID is required.", "warning");
-        return;
-      }
-      if (!password.trim()) 
-      {
-        //showAlert("Warning",  "Password is required.", "warning");
-        return;
-      }
       const formData = new FormData();
-
       formData.append('username', username);
       formData.append('password', password);
-      const data = await signIn(formData);
-      console.log(data.data.access_token);
       
-      if (data.success) {
-        // Use the login function from AuthContext
-        login(data.data.access_token);
-        router.push('/dashboard');
+      const authResult = await signIn(formData);
+      
+      if (authResult.success) {
+        // Update auth context immediately
+        login(authResult.data.access_token);
+        
+        // Clear form
+        setUsername('');
+        setPassword('');
+        
+        // Direct navigation without waiting
+        router.replace('/dashboard');
       } else {
-        setError(data?.message || 'Error signing in.');
+        setError(authResult?.message || 'Invalid credentials.');
+        setLoading(false);
       }
     } catch (error: any) {
-      setError(error?.message || 'Error signing in.');
-    } finally {
+      setError(error?.message || 'Login failed. Please try again.');
       setLoading(false);
     }
-  };
+  }, [username, password, login, router]);
 
   const handleForgotPassword = () => {
-    // TODO: Navigate to forgot password page or show modal
     console.log('Forgot password clicked');
   };
 
@@ -70,18 +73,13 @@ export default function LoginPage() {
         <div className="flex flex-col lg:flex-row">
           {/* Left Panel - Welcome Section */}
           <div className="lg:w-1/2 bg-gradient-to-br from-orange-500 via-orange-600 to-red-500 p-8 lg:p-12 text-white relative overflow-hidden">
-            {/* Background decorative elements */}
             <div className="absolute top-20 right-10 w-32 h-32 bg-orange-400 rounded-full opacity-20"></div>
             <div className="absolute bottom-20 left-10 w-24 h-24 bg-orange-300 rounded-full opacity-30"></div>
             <div className="absolute top-40 left-20 w-16 h-16 bg-white rounded-lg opacity-10 rotate-45"></div>
             <div className="absolute top-10 left-1/2 w-20 h-20 bg-gradient-to-r from-yellow-300 to-orange-300 rounded-full opacity-20"></div>
             
             <div className="relative z-10">
-              {/* Logo placeholder */}
-              <div className="mb-8">
-                
-              </div>
-
+              <div className="mb-8"></div>
               <div className="space-y-6">
                 <h2 className="text-4xl lg:text-5xl font-bold leading-tight">
                   Welcome Back!
@@ -102,14 +100,12 @@ export default function LoginPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Error Message */}
                 {error && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                     {error}
                   </div>
                 )}
 
-                {/* Mobile Number Field */}
                 <div>
                   <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-2">
                     User ID
@@ -130,11 +126,11 @@ export default function LoginPage() {
                       placeholder="Enter your mobile number"
                       required
                       disabled={loading}
+                      autoComplete="username"
                     />
                   </div>
                 </div>
 
-                {/* Password Field */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                     Password
@@ -155,11 +151,11 @@ export default function LoginPage() {
                       placeholder="Enter your password"
                       required
                       disabled={loading}
+                      autoComplete="current-password"
                     />
                   </div>
                 </div>
 
-                {/* Forgot Password */}
                 <div className="flex justify-end">
                   <button
                     type="button"
@@ -171,10 +167,9 @@ export default function LoginPage() {
                   </button>
                 </div>
 
-                {/* Sign In Button */}
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !username.trim() || !password.trim()}
                   className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transform hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   {loading ? (
@@ -191,7 +186,6 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              {/* Sign Up Link */}
               <div className="mt-8 text-center">
                 <p className="text-gray-600">
                   Don't have an account?{' '}
@@ -207,3 +201,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default withoutAuth(LoginPage);

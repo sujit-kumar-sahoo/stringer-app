@@ -1,8 +1,9 @@
 
 'use client'
+import withAuth from '@/hoc/withAuth';
 
-import React, { useState, useEffect, useRef } from 'react'
-import { ChevronDown, Search, Grid3X3, List, MapPin, Clock, User, FileText, AlertCircle, Timer, Image, Video, Headphones, File, Lock, Unlock, Calendar , X, Check } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { ChevronDown, Search, Grid3X3, List, MapPin, Clock,  FileText, AlertCircle, Image, Video, Headphones, File, Lock,  Calendar , X, Check } from 'lucide-react'
 
 interface Activity {
   id: string
@@ -21,7 +22,7 @@ interface Activity {
   lockedBy?: string
 }
 
-const InputDesk: React.FC = () => {
+const Listing: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -486,8 +487,8 @@ const InputDesk: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="sticky top-0 z-20 bg-gray-50 shadow-sm">
+        <div className="max-w-7xl mx-auto">
           {/* Filters and Controls */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -574,7 +575,7 @@ const InputDesk: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto py-6">
        
 
         {/* Content Grid */}
@@ -770,4 +771,4 @@ const InputDesk: React.FC = () => {
   )
 }
 
-export default InputDesk
+export default withAuth(Listing)

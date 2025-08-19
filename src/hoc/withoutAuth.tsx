@@ -1,3 +1,4 @@
+"use client"
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -9,17 +10,25 @@ const withoutAuth = (WrappedComponent: React.ComponentType) => {
 
     useEffect(() => {
       if (!loading && isAuthenticated) {
-        router.push('/dashboard');
+        router.replace('/dashboard');
       }
     }, [isAuthenticated, loading, router]);
 
-    if (loading || isAuthenticated) {
-      // Optionally render a loading spinner or placeholder
-      return <div>Loading...</div>;
+   
+    if (isAuthenticated) {
+      return null;
     }
 
+   
+    if (loading) {
+      return null;
+    }
+
+    
     return <WrappedComponent {...props} />;
   };
+
+  Wrapper.displayName = `withoutAuth(${WrappedComponent.displayName || WrappedComponent.name})`;
 
   return Wrapper;
 };

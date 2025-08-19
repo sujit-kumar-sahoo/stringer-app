@@ -34,7 +34,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (currentTime < parseInt(expirationTime)) {
         try {
-          
           const decodedToken = jwtDecode(token);
           setUser({ 
             name: (decodedToken as any)?.profile_name || "Guest",
@@ -43,12 +42,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
         } catch (error) {
           console.error('Error decoding token:', error);
-          // If token is invalid, remove it
           localStorage.removeItem('token');
           localStorage.removeItem('tokenExpiration');
         }
       } else {
-        // Token has expired
         localStorage.removeItem('token');
         localStorage.removeItem('tokenExpiration');
       }
@@ -78,14 +75,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('tokenExpiration');
     setUser(null);
-    router.push('/');
+    // Immediate redirect without showing any intermediate state
+    router.replace('/login');
   };
 
   const isAuthenticated = !!user;
   
   return (
     <AuthContext.Provider value={{ user, loading, isAuthenticated, login, logout }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

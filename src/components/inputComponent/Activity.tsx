@@ -1,7 +1,7 @@
 'use client'
-
+import withAuth from '@/hoc/withAuth';
 import React, { useState, useEffect } from 'react'
-import { Search, Filter, Calendar, Clock, User, FileText, Edit3, Upload, ChevronDown, X } from 'lucide-react'
+import { Search,  Calendar, User, FileText, Edit3, Upload, ChevronDown, X } from 'lucide-react'
 
 interface Activity {
   id: string
@@ -14,7 +14,7 @@ interface Activity {
   link?: string
 }
 
-const Create: React.FC = () => {
+const Activity: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -100,7 +100,7 @@ const Create: React.FC = () => {
 
   const getFilteredActivities = () => {
     let filtered = activities.filter(activity => {
-      // Search filter (using applied search term)
+      
       const searchMatch = !appliedSearchTerm ||
         activity.storyTitle.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
         activity.user.toLowerCase().includes(appliedSearchTerm.toLowerCase())
@@ -115,7 +115,7 @@ const Create: React.FC = () => {
         }
         if (dateTo) {
           const toDate = new Date(dateTo)
-          toDate.setHours(23, 59, 59, 999) // Include the entire "to" date
+          toDate.setHours(23, 59, 59, 999) 
           dateMatch = dateMatch && activityDate <= toDate
         }
       }
@@ -233,8 +233,8 @@ const Create: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sticky Header - Reduced Height */}
-      <div className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200 shadow-sm">
-        <div className="px-4 py-4">
+      <div className="sticky top-0 z-20 bg-gray-50 shadow-sm">
+        <div>
           {/* Filters and Controls */}
           <div className="bg-white rounded-lg shadow-sm border p-4">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -282,7 +282,7 @@ const Create: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className=" px-4 py-6">
+      <div className="py-6">
         
 
         {/* Activities Feed */}
@@ -356,4 +356,4 @@ const Create: React.FC = () => {
   )
 }
 
-export default Create
+export default withAuth(Activity)
