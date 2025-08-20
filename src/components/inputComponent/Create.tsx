@@ -3,6 +3,15 @@ import withAuth from '@/hoc/withAuth';
 import React, { useState, useRef, useEffect } from 'react'
 import { getPriorities} from '@/services/priorityService';
 import { getLocations } from '@/services/locationService'; // Fixed typo
+import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
+
+interface FileWithMeta {
+  file: File;
+  previewUrl: string;
+  progress: number;
+  uploadedUrl?: string;
+  s3Key?: string;
+}
 
 function Create() {
   // Rich text editor state
@@ -267,6 +276,107 @@ function Create() {
       {children}
     </button>
   )
+
+
+  //===================file upload start===============//
+  const [files, setFiles] = useState<FileWithMeta[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+
+    setFiles((prev) => {
+      const existingFileNames = new Set(prev.map(f => f.file.name));
+      const newFiles = selectedFiles
+        .filter(file => !existingFileNames.has(file.name))
+        .map((file) => ({
+          file,
+          previewUrl: URL.createObjectURL(file),
+          progress: 0,
+        }));
+      return [...prev, ...newFiles];
+    });
+  };
+
+
+  const handleRemoveFile = async (index: number) => {
+      const fileToRemove = files[index];
+
+      // Delete from S3 if uploaded
+      if (fileToRemove.uploadedUrl && fileToRemove.s3Key) 
+      {
+          try {
+          await fetch('/api/delete-from-s3', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key: fileToRemove.s3Key }),
+          });
+          } catch (err) {
+          console.error('Error deleting from S3:', err);
+          }
+      }
+
+      // Revoke preview URL and remove from list
+      URL.revokeObjectURL(fileToRemove.previewUrl);
+      setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpload = async () => {
+    const updatedFiles = [...files];
+
+    for (let i = 0; i < updatedFiles.length; i++) {
+      const fileMeta = updatedFiles[i];
+
+      // ✅ Skip already uploaded files
+      if (fileMeta.uploadedUrl) continue;
+
+      try {
+        const presigned = await getPresignedUrl(fileMeta.file.name, fileMeta.file.type);
+
+        const formData = new FormData();
+        Object.entries(presigned.fields).forEach(([key, value]) => {
+          formData.append(key, value as string);
+        });
+        formData.append("file", fileMeta.file);
+
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", presigned.url);
+
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const percent = (e.loaded / e.total) * 100;
+              setFiles((prev) =>
+                prev.map((f, idx) =>
+                  idx === i ? { ...f, progress: percent } : f
+                )
+              );
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status === 204) {
+              const uploadedUrl = `${presigned.fields.key}`;
+              setFiles((prev) =>
+                prev.map((f, idx) =>
+                  idx === i ? { ...f, uploadedUrl, s3Key: uploadedUrl } : f
+                )
+              );
+              resolve();
+            } else {
+              reject("Upload failed");
+            }
+          };
+
+          xhr.onerror = () => reject("XHR Error");
+          xhr.send(formData);
+        });
+      } catch (err) {
+        console.error(`Upload failed for ${fileMeta.file.name}`, err);
+      }
+    }
+  };
+//===================file upload end ===============//
 
   if (!isEditorReady) {
     return (
@@ -614,6 +724,123 @@ function Create() {
             </div>
 
             {/* Attachment Upload */}
+            <div className="mb-5.5">
+                  <label className="mb-3 block text-sm font-medium text-black dark:text-white">
+                    Attachment
+                  </label>
+
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    {/* LEFT: Dropzone */}
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="relative block w-full cursor-pointer appearance-none rounded border border-dashed border-primary bg-gray px-4 py-4 dark:bg-meta-4 sm:py-7.5"
+                    >
+                      <input
+                        type="file"
+                        multiple
+                        accept="audio/*,image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                        className="absolute inset-0 z-50 h-full w-full opacity-0"
+                        onChange={handleFileChange}
+                      />
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full border border-stroke bg-white dark:border-strokedark dark:bg-boxdark">
+                          📁
+                        </span>
+                        <p>
+                          <span className="text-primary">Click to upload</span> or drag and drop
+                        </p>
+                        <p className="mt-1.5">JPG, PNG, MP4, PDF, DOCX</p>
+                        <p>(Multiple files allowed)</p>
+                      </div>
+                    </div>
+
+                    {/* RIGHT: File list & progress */}
+                    <div className="flex flex-col gap-4 overflow-y-auto max-h-96">
+                      <div className="max-h-54 overflow-y-auto pr-2 space-y-4">
+                      {files.map((f, idx) => (
+                        <div key={idx} className="relative flex items-center gap-4">
+                        {/* ❌ Remove Button */}
+                        <button
+                            type="button"
+                            onClick={() => handleRemoveFile(idx)}
+                            className="absolute -right-2 -top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-primary text-xs hover:bg-red-600"
+                            title="Remove"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-circle-fill" viewBox="0 0 16 16">
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293z"/>
+                            </svg>
+                        </button>
+
+                        {f.file.type.startsWith('image') ? (
+                            <img
+                            src={f.previewUrl}
+                            alt="preview"
+                            className="h-16 w-16 rounded object-cover border border-gray-300"
+                            />
+                        ) : f.file.type.startsWith('video') ? (
+                            <video
+                            src={f.previewUrl}
+                            className="h-16 w-16 rounded border border-gray-300"
+                            muted
+                            loop
+                            />
+                        ) : f.file.type.startsWith('audio') ? (
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              width="16" 
+                              height="16" 
+                              fill="currentColor" 
+                              className="bi bi-file-earmark-music-fill h-12 w-12 "
+                              viewBox="0 0 16 16"
+                            >
+                              <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M11 6.64v1.75l-2 .5v3.61c0 .495-.301.883-.662 1.123C7.974 13.866 7.499 14 7 14s-.974-.134-1.338-.377C5.302 13.383 5 12.995 5 12.5s.301-.883.662-1.123C6.026 11.134 6.501 11 7 11c.356 0 .7.068 1 .196V6.89a1 1 0 0 1 .757-.97l1-.25A1 1 0 0 1 11 6.64"/>
+                            </svg>
+                        ) : (
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              width="16" 
+                              height="16" 
+                              fill="currentColor" 
+                              className="bi bi-file-text h-12 w-12 "
+                              viewBox="0 0 16 16"
+                            >
+                              <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5M5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1z"/>
+                              <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1"/>
+                            </svg>
+                        )}
+
+                        <div className="flex-1">
+                            <p className="text-sm font-medium truncate">{f.file.name}</p>
+                            <progress
+                            value={f.progress}
+                            max={100}
+                            className="w-full h-2 rounded [&::-webkit-progress-value]:bg-primary"
+                            />
+                            {f.uploadedUrl && (
+                            <a
+                                href={f.uploadedUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-green-600"
+                            >
+                                View uploaded file
+                            </a>
+                            )}
+                        </div>
+                        </div>
+                      ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleUpload}
+                        disabled={files.length === 0}
+                        className="mt-4 w-full rounded bg-primary px-4 py-2 text-white hover:bg-opacity-90 disabled:bg-opacity-50"
+                      >
+                        Upload
+                      </button>
+                    </div>
+                  </div>
+                </div>
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Attachments

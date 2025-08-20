@@ -82,18 +82,18 @@ const DesktopSidebar: React.FC = () => {
       ]
     },
     { 
-      id: 'input-activity', 
-      icon: FileText, 
-      label: 'Activity log', 
-      color: 'emerald', 
-      href: '/activity-log',
-    },
-    { 
       id: 'input-create', 
       icon: FileText, 
       label: 'Create', 
       color: 'emerald', 
       href: '/create',
+    },
+    { 
+      id: 'input-activity', 
+      icon: FileText, 
+      label: 'Activity log', 
+      color: 'emerald', 
+      href: '/activity-log',
     },
   ];
 
