@@ -2,15 +2,19 @@
 import withAuth from '@/hoc/withAuth';
 import React, { useState, useRef, useEffect } from 'react'
 import { getPriorities } from '@/services/priorityService';
-import { getLocations } from '@/services/locationService'; // Fixed typo
+import { getLocations } from '@/services/locationService';
 import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
-
+import TagsSearch from "../ui/TagSearchComponent"
 interface FileWithMeta {
   file: File;
   previewUrl: string;
   progress: number;
   uploadedUrl?: string;
   s3Key?: string;
+}
+interface Tag {
+  id: string;
+  name: string;
 }
 
 function Create() {
@@ -27,7 +31,7 @@ function Create() {
   const [contentType, setContentType] = useState('')
   const [title, setTitle] = useState('')
   const [location, setLocation] = useState('')
-  const [tags, setTags] = useState('')
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([])
   const [attachments, setAttachments] = useState<FileList | null>(null)
 
   // Priority state
@@ -233,7 +237,7 @@ function Create() {
       title,
       location,
       content: editorData,
-      tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
+      tags: selectedTags.map(tag => tag.name), // Extract tag names
       attachments: attachments ? Array.from(attachments).map(file => file.name) : []
     }
 
@@ -248,7 +252,7 @@ function Create() {
       setTitle('')
       setLocation('')
       setEditorData('')
-      setTags('')
+      setSelectedTags([])
       setAttachments(null)
       if (editorRef.current) {
         editorRef.current.innerHTML = ''
@@ -266,8 +270,8 @@ function Create() {
     <button
       onClick={onClick}
       className={`p-2 rounded-md text-sm font-medium transition-all duration-200 ${active
-          ? 'bg-blue-100 text-blue-700 shadow-sm'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+        ? 'bg-blue-100 text-blue-700 shadow-sm'
+        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
         }`}
       title={title}
       onMouseDown={(e) => e.preventDefault()}
@@ -378,7 +382,7 @@ function Create() {
 
   if (!isEditorReady) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         {/* Header matching file 1 style */}
         <div className="sticky top-0 z-20 bg-gray-50 shadow-sm">
           <div className="px-4 py-4">
@@ -415,8 +419,8 @@ function Create() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sticky Header - Fixed positioning and padding */}
-      <div className="sticky top-0 z-20 pb-4">
-        <div className="">
+      <div className="sticky top-0 z-20 bg-gray-50 p-4 flex-shrink-0">
+        <div>
           <div className="bg-white rounded-lg shadow-sm border p-4">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Title */}
@@ -445,7 +449,7 @@ function Create() {
       </div>
 
       {/* Content Area - Added proper padding and margin */}
-      <div className="pb-8">
+      <div className="flex-1 p-4 overflow-auto">
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
           {/* Form Fields */}
           <div className="p-6 border-b border-gray-200">
@@ -496,21 +500,8 @@ function Create() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Title Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter story title"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
-              </div>
 
-              {/* Location Dropdown */}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Location
@@ -534,6 +525,27 @@ function Create() {
                   <p className="text-xs text-gray-500 mt-1">Loading location options...</p>
                 )}
               </div>
+   
+              
+                <TagsSearch
+                  selectedTags={selectedTags}
+                  onTagsChange={setSelectedTags}
+                  placeholder="Search or add tags..."
+                  maxTags={8}
+                />
+            
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter story title"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
             </div>
           </div>
 
@@ -705,21 +717,6 @@ function Create() {
           {/* Additional Fields */}
           <div className="p-6 border-t border-gray-200">
             {/* Search & Tags */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tags
-              </label>
-              <input
-                type="text"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                placeholder="Enter tags separated by commas"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Enter tags separated by commas (e.g., politics, economy, breaking news)
-              </p>
-            </div>
 
             {/* Attachment Upload */}
             <div className="mb-5.5">
@@ -828,51 +825,22 @@ function Create() {
                       </div>
                     ))}
                   </div>
+
                   <button
                     type="button"
                     onClick={handleUpload}
                     disabled={files.length === 0}
-                    className="mt-4 w-full rounded bg-primary px-4 py-2 text-white hover:bg-opacity-90 disabled:bg-opacity-50"
-                  >
-                    Upload
+                    className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    Upload Files
                   </button>
-                </div>
-                <div className="mb-6">
 
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 transition-colors text-sm font-medium">
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                      </svg>
-                      Upload Files
-                      <input
-                        type="file"
-                        multiple
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-                      />
-                    </label>
-                    {attachments && (
-                      <span className="text-sm text-gray-600">
-                        {attachments.length} file{attachments.length !== 1 ? 's' : ''} selected
-                      </span>
-                    )}
-                  </div>
-                  {attachments && (
-                    <div className="mt-3 text-sm text-gray-600">
-                      <strong>Selected files:</strong>
-                      <ul className="list-disc list-inside ml-4 mt-1">
-                        {Array.from(attachments).map((file, index) => (
-                          <li key={index}>{file.name} ({(file.size / 1024).toFixed(1)} KB)</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
-
+            <div className="pb-20"></div>
           </div>
         </div>
       </div>

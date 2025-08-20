@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
-import { Edit3, User, ArrowLeft, ChevronDown, FileText } from 'lucide-react'
+import { Edit3, User, ChevronDown, FileText } from 'lucide-react'
 
 interface StoryData {
   title: string
