@@ -1,6 +1,4 @@
 'use client'
-import withAuth from '@/hoc/withAuth';
-
 import React, { useState, useRef, useEffect } from 'react'
 import { Edit3, User, ArrowLeft, ChevronDown, FileText } from 'lucide-react'
 
@@ -27,7 +25,6 @@ interface StoryData {
     id: string
     user: string
     action: string
-   
     avatar: string
   }>
 }
@@ -35,7 +32,6 @@ interface StoryData {
 interface VersionHistory {
   version: number
   title: string
-
   author: string
 }
 
@@ -48,7 +44,7 @@ const StoryDetailView: React.FC = () => {
   const overviewRef = useRef<HTMLDivElement>(null)
   const attachmentsRef = useRef<HTMLDivElement>(null)
   const activitiesRef = useRef<HTMLDivElement>(null)
-
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Version history data
   const versionHistory: VersionHistory[] = [
@@ -95,28 +91,24 @@ const StoryDetailView: React.FC = () => {
         id: '1',
         user: 'You',
         action: 'updated story to version 3',
-       
         avatar: 'Y'
       },
       {
         id: '2',
         user: 'Editor',
         action: 'reviewed and provided feedback',
-     
         avatar: 'E'
       },
       {
         id: '3',
         user: 'You',
         action: 'updated story to version 2',
-        
         avatar: 'Y'
       },
       {
         id: '4',
         user: 'You',
         action: 'created story',
-       
         avatar: 'Y'
       }
     ]
@@ -215,7 +207,19 @@ const StoryDetailView: React.FC = () => {
   const handleVersionChange = (version: number) => {
     setSelectedVersion(version)
     setShowVersionDropdown(false)
-    alert(`Loading version ${version}...`)
+    
+    // Update story data based on selected version
+    const selectedVersionData = versionHistory.find(v => v.version === version)
+    if (selectedVersionData) {
+      setStoryData(prev => ({
+        ...prev,
+        title: selectedVersionData.title,
+        currentVersion: version,
+        // You can add more version-specific data updates here
+      }))
+    }
+    
+    console.log(`Loading version ${version}...`)
   }
 
   const handleReturnToReporter = () => {
@@ -229,14 +233,16 @@ const StoryDetailView: React.FC = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showVersionDropdown) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowVersionDropdown(false)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
+    if (showVersionDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
     }
   }, [showVersionDropdown])
 
@@ -245,20 +251,17 @@ const StoryDetailView: React.FC = () => {
       {/* Sticky Header */}
       <div className="sticky top-0 z-20 bg-gray-50">
         <div className="max-w-7xl sm:py-4">
-          {/* Mobile Header */}
+        
           <div className="md:hidden">
             <div className="flex items-center justify-between mb-3 px-3 relative">
               <div className="flex items-center space-x-2 flex-1 min-w-0">
-                <button className="p-2 hover:bg-gray-200 rounded-md transition-colors flex-shrink-0">
-                  <ArrowLeft size={20} className="text-gray-600" />
-                </button>
-                <h1 className="text-lg font-bold text-gray-900 truncate pr-12">
+                <h1 className="text-lg font-bold text-gray-900 truncate pr-16">
                   {storyData.title}
                 </h1>
               </div>
               
               {/* Version dropdown positioned at the end of title */}
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2" ref={dropdownRef}>
                 <button
                   onClick={() => setShowVersionDropdown(!showVersionDropdown)}
                   className="flex items-center space-x-1 px-2 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm font-medium transition-colors"
@@ -302,7 +305,7 @@ const StoryDetailView: React.FC = () => {
               </div>
             </div>
 
-            {/* Mobile Action Buttons */}
+           
             <div className="flex space-x-2 mb-3 px-3">
               <button 
                 onClick={handleReturnToReporter}
@@ -388,77 +391,7 @@ const StoryDetailView: React.FC = () => {
           {/* Desktop Header */}
           <div className="hidden md:block">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3 flex-1 min-w-0">
-                <button className="p-2 hover:bg-gray-200 rounded-md transition-colors">
-                  <ArrowLeft size={20} className="text-gray-600" />
-                </button>
-                <h1 className="text-2xl font-bold text-gray-900 truncate">
-                  {storyData.title}
-                </h1>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                {/* Version Dropdown */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowVersionDropdown(!showVersionDropdown)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm font-medium transition-colors"
-                  >
-                    <span>Version {selectedVersion}</span>
-                    <ChevronDown size={16} className={`transition-transform ${showVersionDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-                  
-                  {showVersionDropdown && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-30">
-                      <div className="p-2">
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide px-3 py-2 border-b border-gray-100">
-                          Previous Versions
-                        </div>
-                        {versionHistory.map((version) => (
-                          <button
-                            key={version.version}
-                            onClick={() => handleVersionChange(version.version)}
-                            className={`w-full text-left px-3 py-3 rounded-md hover:bg-gray-50 transition-colors ${
-                              selectedVersion === version.version ? 'bg-blue-50 border-l-4 border-blue-500' : ''
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-medium text-gray-900 text-sm">
-                                  Version {version.version}
-                                </div>
-                                <div className="text-xs text-gray-500 truncate max-w-48">
-                                  {version.title}
-                                </div>
-                              </div>
-                              <div className="text-xs text-gray-400 ml-2">
-                                
-                                
-                              </div>
-                            </div>
-                            <div className="text-xs text-gray-400 mt-1">
-                              by {version.author}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <button 
-                  onClick={handleReturnToReporter}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
-                >
-                  RETURN TO REPORTER
-                </button>
-                <button 
-                  onClick={handleShare}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium transition-colors"
-                >
-                  SHARE
-                </button>
-              </div>
+              <h1 className="text-2xl font-bold text-gray-900">{storyData.title}</h1>
             </div>
 
             {/* Desktop Story Metadata */}
@@ -484,8 +417,63 @@ const StoryDetailView: React.FC = () => {
                   <span className="text-sm font-medium text-gray-600">Tags:</span>
                   <span className="text-sm font-semibold text-gray-800">{storyData.tags}</span>
                 </div>
-                <div className="flex items-center space-x-2 pl-4 whitespace-nowrap">
-                  <span className="text-sm font-semibold text-gray-800">Version {storyData.currentVersion}</span>
+               
+                <div className="flex items-center space-x-2 pl-4">
+                  <div className="relative" ref={dropdownRef}>
+                    <button
+                      onClick={() => setShowVersionDropdown(!showVersionDropdown)}
+                      className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm font-medium transition-colors"
+                    >
+                      <span>Version {selectedVersion}</span>
+                      <ChevronDown size={16} className={`transition-transform ${showVersionDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {showVersionDropdown && (
+                      <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-30">
+                        <div className="p-2">
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide px-3 py-2 border-b border-gray-100">
+                            Previous Versions
+                          </div>
+                          {versionHistory.map((version) => (
+                            <button
+                              key={version.version}
+                              onClick={() => handleVersionChange(version.version)}
+                              className={`w-full text-left px-3 py-3 rounded-md hover:bg-gray-50 transition-colors ${
+                                selectedVersion === version.version ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium text-gray-900 text-sm">
+                                    Version {version.version}
+                                  </div>
+                                  <div className="text-xs text-gray-500 truncate max-w-48">
+                                    {version.title}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                by {version.author}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button 
+                    onClick={handleReturnToReporter}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
+                  >
+                    RETURN TO REPORTER
+                  </button>
+                  <button 
+                    onClick={handleShare}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium transition-colors"
+                  >
+                    SHARE
+                  </button>
                 </div>
               </div>
 
@@ -530,7 +518,7 @@ const StoryDetailView: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="max-w-7xl">
+      <div className="max-w-7xl px-4">
         
         {/* Overview Section */}
         <div ref={overviewRef} data-section="overview" className="bg-white rounded-none md:rounded-lg shadow-md border-l-0 border-r-0 md:border-l-2 md:border-r-2 border-t-2 border-b-2 md:border-2 border-gray-200 scroll-mt-40 mb-4 sm:mb-6">
@@ -588,6 +576,7 @@ const StoryDetailView: React.FC = () => {
             </div>
           </div>
         </div>
+        
         {/* Attachments Section */}
         <div ref={attachmentsRef} data-section="attachments" className="bg-white rounded-none md:rounded-lg shadow-sm border-l-0 border-r-0 md:border border-t border-b border-gray-200 scroll-mt-40 mb-4">
           <div className="p-6">
@@ -606,8 +595,7 @@ const StoryDetailView: React.FC = () => {
                       <img
                         src={attachment.url}
                         alt={attachment.name}
-                        className="w-full h-full object-cover"
-                      />
+                        className="w-full h-full object-cover"/>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <FileText size={48} className="text-gray-400" />
@@ -649,7 +637,7 @@ const StoryDetailView: React.FC = () => {
                       <span className="text-gray-600 ml-1">{activity.action}</span>
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      
+                      Just now
                     </div>
                   </div>
                 </div>
@@ -662,4 +650,4 @@ const StoryDetailView: React.FC = () => {
   )  
 }
 
-export default withAuth(StoryDetailView)
+export default StoryDetailView

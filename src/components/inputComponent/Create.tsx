@@ -1,7 +1,7 @@
 'use client'
 import withAuth from '@/hoc/withAuth';
 import React, { useState, useRef, useEffect } from 'react'
-import { getPriorities} from '@/services/priorityService';
+import { getPriorities } from '@/services/priorityService';
 import { getLocations } from '@/services/locationService'; // Fixed typo
 import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
 
@@ -31,11 +31,11 @@ function Create() {
   const [attachments, setAttachments] = useState<FileList | null>(null)
 
   // Priority state
-  const [priorityOptions, setPriorityOptions] = useState<{value: string, label: string}[]>([])
+  const [priorityOptions, setPriorityOptions] = useState<{ value: string, label: string }[]>([])
   const [isLoadingPriorities, setIsLoadingPriorities] = useState(true)
 
   // Location state
-  const [locationOptions, setLocationOptions] = useState<{value: string, label: string}[]>([])
+  const [locationOptions, setLocationOptions] = useState<{ value: string, label: string }[]>([])
   const [isLoadingLocations, setIsLoadingLocations] = useState(true)
 
   // Content type options
@@ -50,21 +50,21 @@ function Create() {
 
   useEffect(() => {
     setIsEditorReady(true)
-    
+
     const handleSelectionChange = () => {
       if (!isUpdatingRef.current) {
         updateActiveFormats()
       }
     }
-    
+
     document.addEventListener('selectionchange', handleSelectionChange)
-    
+
     return () => {
       document.removeEventListener('selectionchange', handleSelectionChange)
     }
   }, [])
 
-  
+
   useEffect(() => {
     const fetchPriorities = async () => {
       try {
@@ -112,17 +112,17 @@ function Create() {
 
     fetchPriorities()
     fetchLocations()
-  }, []) 
+  }, [])
 
   const updateActiveFormats = () => {
     const formats = new Set<string>()
-    
+
     if (document.queryCommandState('bold')) formats.add('bold')
     if (document.queryCommandState('italic')) formats.add('italic')
     if (document.queryCommandState('underline')) formats.add('underline')
     if (document.queryCommandState('insertUnorderedList')) formats.add('ul')
     if (document.queryCommandState('insertOrderedList')) formats.add('ol')
-    
+
     setActiveFormats(formats)
   }
 
@@ -154,7 +154,7 @@ function Create() {
     let node
     while (node = walker.nextNode()) {
       const nextCharIndex = charIndex + (node.textContent?.length || 0)
-      
+
       if (savedPosition <= nextCharIndex) {
         const range = document.createRange()
         range.setStart(node, savedPosition - charIndex)
@@ -177,28 +177,28 @@ function Create() {
     if (editorRef.current && !isUpdatingRef.current) {
       const newContent = editorRef.current.innerHTML
       const textContent = editorRef.current.textContent || ''
-      
+
       setIsEmpty(textContent.trim().length === 0)
       setEditorData(newContent)
     }
   }
 
-  
+
 
   const formatText = (command: string, value?: string) => {
     if (!editorRef.current) return
 
     isUpdatingRef.current = true
     const savedPosition = saveSelection()
-    
+
     editorRef.current.focus()
     document.execCommand(command, false, value)
-    
+
     setTimeout(() => {
       if (editorRef.current) {
         const newContent = editorRef.current.innerHTML
         const textContent = editorRef.current.textContent || ''
-        
+
         setEditorData(newContent)
         setIsEmpty(textContent.trim().length === 0)
         restoreSelection(savedPosition)
@@ -236,7 +236,7 @@ function Create() {
       tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
       attachments: attachments ? Array.from(attachments).map(file => file.name) : []
     }
-    
+
     console.log(`${action === 'save' ? 'Saving' : 'Uploading'} story:`, formData)
     alert(`Story ${action === 'save' ? 'saved' : 'uploaded'} successfully!`)
   }
@@ -265,11 +265,10 @@ function Create() {
   }> = ({ onClick, active = false, title, children }) => (
     <button
       onClick={onClick}
-      className={`p-2 rounded-md text-sm font-medium transition-all duration-200 ${
-        active 
-          ? 'bg-blue-100 text-blue-700 shadow-sm' 
+      className={`p-2 rounded-md text-sm font-medium transition-all duration-200 ${active
+          ? 'bg-blue-100 text-blue-700 shadow-sm'
           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-      }`}
+        }`}
       title={title}
       onMouseDown={(e) => e.preventDefault()}
     >
@@ -300,25 +299,24 @@ function Create() {
 
 
   const handleRemoveFile = async (index: number) => {
-      const fileToRemove = files[index];
+    const fileToRemove = files[index];
 
-      // Delete from S3 if uploaded
-      if (fileToRemove.uploadedUrl && fileToRemove.s3Key) 
-      {
-          try {
-          await fetch('/api/delete-from-s3', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ key: fileToRemove.s3Key }),
-          });
-          } catch (err) {
-          console.error('Error deleting from S3:', err);
-          }
+    // Delete from S3 if uploaded
+    if (fileToRemove.uploadedUrl && fileToRemove.s3Key) {
+      try {
+        await fetch('/api/delete-from-s3', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: fileToRemove.s3Key }),
+        });
+      } catch (err) {
+        console.error('Error deleting from S3:', err);
       }
+    }
 
-      // Revoke preview URL and remove from list
-      URL.revokeObjectURL(fileToRemove.previewUrl);
-      setFiles((prev) => prev.filter((_, i) => i !== index));
+    // Revoke preview URL and remove from list
+    URL.revokeObjectURL(fileToRemove.previewUrl);
+    setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleUpload = async () => {
@@ -376,7 +374,7 @@ function Create() {
       }
     }
   };
-//===================file upload end ===============//
+  //===================file upload end ===============//
 
   if (!isEditorReady) {
     return (
@@ -398,7 +396,7 @@ function Create() {
             </div>
           </div>
         </div>
-        
+
         <div className="px-4 py-6">
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
             <div className="animate-pulse">
@@ -554,7 +552,7 @@ function Create() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 12h9a4 4 0 014 4 4 4 0 01-4 4H6z"></path>
                   </svg>
                 </ToolbarButton>
-                
+
                 <ToolbarButton
                   onClick={() => formatText('italic')}
                   active={activeFormats.has('italic')}
@@ -564,7 +562,7 @@ function Create() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 4v16m4-16v16"></path>
                   </svg>
                 </ToolbarButton>
-                
+
                 <ToolbarButton
                   onClick={() => formatText('underline')}
                   active={activeFormats.has('underline')}
@@ -691,7 +689,7 @@ function Create() {
               ref={editorRef}
               contentEditable
               onInput={handleInput}
-             
+
               onKeyUp={updateActiveFormats}
               onClick={updateActiveFormats}
               suppressContentEditableWarning={true}
@@ -725,157 +723,156 @@ function Create() {
 
             {/* Attachment Upload */}
             <div className="mb-5.5">
-                  <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                    Attachment
-                  </label>
+              <label className="mb-3 block text-sm font-medium text-black dark:text-white">
+                Attachment
+              </label>
 
-                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    {/* LEFT: Dropzone */}
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="relative block w-full cursor-pointer appearance-none rounded border border-dashed border-primary bg-gray px-4 py-4 dark:bg-meta-4 sm:py-7.5"
-                    >
-                      <input
-                        type="file"
-                        multiple
-                        accept="audio/*,image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                        className="absolute inset-0 z-50 h-full w-full opacity-0"
-                        onChange={handleFileChange}
-                      />
-                      <div className="flex flex-col items-center justify-center space-y-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-full border border-stroke bg-white dark:border-strokedark dark:bg-boxdark">
-                          📁
-                        </span>
-                        <p>
-                          <span className="text-primary">Click to upload</span> or drag and drop
-                        </p>
-                        <p className="mt-1.5">JPG, PNG, MP4, PDF, DOCX</p>
-                        <p>(Multiple files allowed)</p>
-                      </div>
-                    </div>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                {/* LEFT: Dropzone */}
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative block w-full cursor-pointer appearance-none rounded border border-dashed border-primary bg-gray px-4 py-4 dark:bg-meta-4 sm:py-7.5"
+                >
+                  <input
+                    type="file"
+                    multiple
+                    accept="audio/*,image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                    className="absolute inset-0 z-50 h-full w-full opacity-0"
+                    onChange={handleFileChange}
+                  />
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full border border-stroke bg-white dark:border-strokedark dark:bg-boxdark">
+                      📁
+                    </span>
+                    <p>
+                      <span className="text-primary">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="mt-1.5">JPG, PNG, MP4, PDF, DOCX</p>
+                    <p>(Multiple files allowed)</p>
+                  </div>
+                </div>
 
-                    {/* RIGHT: File list & progress */}
-                    <div className="flex flex-col gap-4 overflow-y-auto max-h-96">
-                      <div className="max-h-54 overflow-y-auto pr-2 space-y-4">
-                      {files.map((f, idx) => (
-                        <div key={idx} className="relative flex items-center gap-4">
+                {/* RIGHT: File list & progress */}
+                <div className="flex flex-col gap-4 overflow-y-auto max-h-96">
+                  <div className="max-h-54 overflow-y-auto pr-2 space-y-4">
+                    {files.map((f, idx) => (
+                      <div key={idx} className="relative flex items-center gap-4">
                         {/* ❌ Remove Button */}
                         <button
-                            type="button"
-                            onClick={() => handleRemoveFile(idx)}
-                            className="absolute -right-2 -top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-primary text-xs hover:bg-red-600"
-                            title="Remove"
+                          type="button"
+                          onClick={() => handleRemoveFile(idx)}
+                          className="absolute -right-2 -top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-primary text-xs hover:bg-red-600"
+                          title="Remove"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-circle-fill" viewBox="0 0 16 16">
-                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293z"/>
-                            </svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-circle-fill" viewBox="0 0 16 16">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293z" />
+                          </svg>
                         </button>
 
                         {f.file.type.startsWith('image') ? (
-                            <img
+                          <img
                             src={f.previewUrl}
                             alt="preview"
                             className="h-16 w-16 rounded object-cover border border-gray-300"
-                            />
+                          />
                         ) : f.file.type.startsWith('video') ? (
-                            <video
+                          <video
                             src={f.previewUrl}
                             className="h-16 w-16 rounded border border-gray-300"
                             muted
                             loop
-                            />
+                          />
                         ) : f.file.type.startsWith('audio') ? (
-                            <svg 
-                              xmlns="http://www.w3.org/2000/svg" 
-                              width="16" 
-                              height="16" 
-                              fill="currentColor" 
-                              className="bi bi-file-earmark-music-fill h-12 w-12 "
-                              viewBox="0 0 16 16"
-                            >
-                              <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M11 6.64v1.75l-2 .5v3.61c0 .495-.301.883-.662 1.123C7.974 13.866 7.499 14 7 14s-.974-.134-1.338-.377C5.302 13.383 5 12.995 5 12.5s.301-.883.662-1.123C6.026 11.134 6.501 11 7 11c.356 0 .7.068 1 .196V6.89a1 1 0 0 1 .757-.97l1-.25A1 1 0 0 1 11 6.64"/>
-                            </svg>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            className="bi bi-file-earmark-music-fill h-12 w-12 "
+                            viewBox="0 0 16 16"
+                          >
+                            <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M11 6.64v1.75l-2 .5v3.61c0 .495-.301.883-.662 1.123C7.974 13.866 7.499 14 7 14s-.974-.134-1.338-.377C5.302 13.383 5 12.995 5 12.5s.301-.883.662-1.123C6.026 11.134 6.501 11 7 11c.356 0 .7.068 1 .196V6.89a1 1 0 0 1 .757-.97l1-.25A1 1 0 0 1 11 6.64" />
+                          </svg>
                         ) : (
-                            <svg 
-                              xmlns="http://www.w3.org/2000/svg" 
-                              width="16" 
-                              height="16" 
-                              fill="currentColor" 
-                              className="bi bi-file-text h-12 w-12 "
-                              viewBox="0 0 16 16"
-                            >
-                              <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5M5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1z"/>
-                              <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1"/>
-                            </svg>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            className="bi bi-file-text h-12 w-12 "
+                            viewBox="0 0 16 16"
+                          >
+                            <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5M5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1z" />
+                            <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1" />
+                          </svg>
                         )}
 
                         <div className="flex-1">
-                            <p className="text-sm font-medium truncate">{f.file.name}</p>
-                            <progress
+                          <p className="text-sm font-medium truncate">{f.file.name}</p>
+                          <progress
                             value={f.progress}
                             max={100}
                             className="w-full h-2 rounded [&::-webkit-progress-value]:bg-primary"
-                            />
-                            {f.uploadedUrl && (
+                          />
+                          {f.uploadedUrl && (
                             <a
-                                href={f.uploadedUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-green-600"
+                              href={f.uploadedUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-green-600"
                             >
-                                View uploaded file
+                              View uploaded file
                             </a>
-                            )}
+                          )}
                         </div>
-                        </div>
-                      ))}
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleUpload}
-                        disabled={files.length === 0}
-                        className="mt-4 w-full rounded bg-primary px-4 py-2 text-white hover:bg-opacity-90 disabled:bg-opacity-50"
-                      >
-                        Upload
-                      </button>
-                    </div>
-                  </div>
-                </div>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Attachments
-              </label>
-              <div className="flex items-center space-x-3">
-                <label className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 transition-colors text-sm font-medium">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                  </svg>
-                  Upload Files
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-                  />
-                </label>
-                {attachments && (
-                  <span className="text-sm text-gray-600">
-                    {attachments.length} file{attachments.length !== 1 ? 's' : ''} selected
-                  </span>
-                )}
-              </div>
-              {attachments && (
-                <div className="mt-3 text-sm text-gray-600">
-                  <strong>Selected files:</strong>
-                  <ul className="list-disc list-inside ml-4 mt-1">
-                    {Array.from(attachments).map((file, index) => (
-                      <li key={index}>{file.name} ({(file.size / 1024).toFixed(1)} KB)</li>
                     ))}
-                  </ul>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleUpload}
+                    disabled={files.length === 0}
+                    className="mt-4 w-full rounded bg-primary px-4 py-2 text-white hover:bg-opacity-90 disabled:bg-opacity-50"
+                  >
+                    Upload
+                  </button>
                 </div>
-              )}
+                <div className="mb-6">
+
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 transition-colors text-sm font-medium">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                      </svg>
+                      Upload Files
+                      <input
+                        type="file"
+                        multiple
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                      />
+                    </label>
+                    {attachments && (
+                      <span className="text-sm text-gray-600">
+                        {attachments.length} file{attachments.length !== 1 ? 's' : ''} selected
+                      </span>
+                    )}
+                  </div>
+                  {attachments && (
+                    <div className="mt-3 text-sm text-gray-600">
+                      <strong>Selected files:</strong>
+                      <ul className="list-disc list-inside ml-4 mt-1">
+                        {Array.from(attachments).map((file, index) => (
+                          <li key={index}>{file.name} ({(file.size / 1024).toFixed(1)} KB)</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
