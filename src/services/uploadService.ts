@@ -7,9 +7,13 @@ interface ApiResponse {
 }
 
 export const getPresignedUrl = async (fileName: string, fileType: string) => {
-  const response = await api.get(`/common/generate-presigned-url`, {
-    params: { file_name: fileName, file_type: fileType },
-  });
+  const response = await api.post(
+                                    `/api/common/generate-presigned-url`, 
+                                    { 
+                                      file_name: fileName, 
+                                      file_type: fileType 
+                                    },
+                                  );
   return response.data; // includes {url, fields}
 };
 
