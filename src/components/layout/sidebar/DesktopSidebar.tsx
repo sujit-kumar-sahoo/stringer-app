@@ -74,7 +74,7 @@ const DesktopSidebar: React.FC = () => {
       href: '/input',
       subItems: [
         { id: 'input-listing', label: 'Wait List', href: '/input/wait-list', count: 24 },
-        { id: 'input-edit', label: 'Edit', href: '/input/edit', count: 24 },
+        { id: 'input-details', label: 'Details', href: '/input/details', count: 24 },
         { id: 'input-wip', label: 'Input WIP', href: '/input/wip', count: 24 },
         { id: 'input-to-stringer', label: 'Input to Stringer', href: '/input/to-stringer', count: 24 },
         { id: 'output-to-input', label: 'Output to Input', href: '/output/to-input', count: 24 },

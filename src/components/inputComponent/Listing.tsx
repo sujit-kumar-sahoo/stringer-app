@@ -593,19 +593,20 @@ const Listing: React.FC = () => {
               >
                 {/* Status Badge - positioned at top right */}
                 <div className="relative">
-                  <div
-                    className="absolute top-0 right-0 bg-teal-600 text-white font-medium"
-                    style={{
-                      fontSize: "0.5rem",
-                      lineHeight: "0.6rem",
-                      paddingTop: "0.2rem",
-                      paddingBottom: "0.2rem",
-                      paddingLeft: "0.2rem",
-                      paddingRight: "0.2rem"
-                    }}
-                  >
+                    <div
+                          className="absolute top-0 right-0 bg-teal-600 text-white font-medium"
+                          style={{
+                          fontSize: "0.5rem",
+                          lineHeight: "0.6rem",
+                          paddingTop: "0.2rem",
+                          paddingBottom: "0.2rem",
+                          paddingLeft: "0.2rem",
+                          paddingRight: "0.2rem",
+                          borderRadius: "0px 6px"
+                          }}
+                    >
                     Waiting in Input
-                  </div>
+                    </div>
                 </div>
 
                 {/* Lock Overlay */}

@@ -5,6 +5,7 @@ import { getPriorities } from '@/services/priorityService';
 import { getLocations } from '@/services/locationService';
 import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
 import TagsSearch from "../ui/TagSearchComponent"
+import LocationSearch from "../ui/LocationSearchComponent"
 interface FileWithMeta {
   file: File;
   previewUrl: string;
@@ -30,8 +31,12 @@ function Create() {
   const [priority, setPriority] = useState('')
   const [contentType, setContentType] = useState('')
   const [title, setTitle] = useState('')
-  const [location, setLocation] = useState('')
-  const [selectedTags, setSelectedTags] = useState<Tag[]>([])
+  interface Location {
+    id: string;
+    name: string;
+  }
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
+  const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
   const [attachments, setAttachments] = useState<FileList | null>(null)
 
   // Priority state
@@ -39,7 +44,7 @@ function Create() {
   const [isLoadingPriorities, setIsLoadingPriorities] = useState(true)
 
   // Location state
-  const [locationOptions, setLocationOptions] = useState<{ value: string, label: string }[]>([])
+  const [locationOptions, setLocationOptions] = useState<Location[]>([])
   const [isLoadingLocations, setIsLoadingLocations] = useState(true)
 
   // Content type options
@@ -99,11 +104,13 @@ function Create() {
 
         if (response.success && response.data && Array.isArray(response.data)) {
           // Fixed mapping to match your API response structure
-          const options = response.data.map((item: any) => ({
-            value: item.id.toString(), // Convert to string for consistency
-            label: item.location.trim() // Use 'location' field and trim whitespace
-          }))
-          setLocationOptions(options)
+          const locations = response.data
+            .filter((item: any) => item.location && typeof item.location === 'string') // Filter out invalid entries
+            .map((item: any) => ({
+              id: item.id.toString(),
+              name: item.location.trim()
+            }))
+          setLocationOptions(locations)
         } else {
           console.error('Invalid locations response structure:', response)
         }
@@ -235,7 +242,7 @@ function Create() {
       priority,
       contentType,
       title,
-      location,
+      location: selectedLocation?.id || '', // Use ID for API compatibility
       content: editorData,
       tags: selectedTags.map(tag => tag.name), // Extract tag names
       attachments: attachments ? Array.from(attachments).map(file => file.name) : []
@@ -250,7 +257,7 @@ function Create() {
       setPriority('')
       setContentType('')
       setTitle('')
-      setLocation('')
+      setSelectedLocation(null)
       setEditorData('')
       setSelectedTags([])
       setAttachments(null)
@@ -449,7 +456,7 @@ function Create() {
       </div>
 
       {/* Content Area - Added proper padding and margin */}
-      <div className="flex-1 p-4 overflow-auto">
+      <div className="flex-1 py-2 px-4 overflow-auto">
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
           {/* Form Fields */}
           <div className="p-6 border-b border-gray-200">
@@ -502,38 +509,21 @@ function Create() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location
-                </label>
-                <select
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  disabled={isLoadingLocations}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm disabled:bg-gray-100"
-                >
-                  <option value="">
-                    {isLoadingLocations ? 'Loading locations...' : 'Select Location'}
-                  </option>
-                  {locationOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {isLoadingLocations && (
-                  <p className="text-xs text-gray-500 mt-1">Loading location options...</p>
-                )}
-              </div>
-   
-              
-                <TagsSearch
-                  selectedTags={selectedTags}
-                  onTagsChange={setSelectedTags}
-                  placeholder="Search or add tags..."
-                  maxTags={8}
-                />
-            
+              <LocationSearch
+                selectedLocation={selectedLocation}
+                onLocationChange={setSelectedLocation}
+                availableLocations={locationOptions}
+                isLoading={isLoadingLocations}
+                placeholder="Search or add location..."
+              />
+
+
+              <TagsSearch
+               selectedTag={selectedTag}
+              onTagChange={setSelectedTag}
+              placeholder="Choose a tag..."
+              />
+
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
