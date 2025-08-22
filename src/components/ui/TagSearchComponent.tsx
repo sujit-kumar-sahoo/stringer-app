@@ -236,7 +236,7 @@ const TagSearch: React.FC<TagSearchProps> = ({
 
       {/* Helper Text */}
       <p className="text-xs text-gray-500 mt-1">
-        Search for an existing tag or type to create a new one.
+        Search for an existing tag.
         {selectedTag ? ' Press backspace to clear the selected tag.' : ''}
       </p>
     </div>

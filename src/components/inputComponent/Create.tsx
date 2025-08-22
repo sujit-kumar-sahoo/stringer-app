@@ -3,6 +3,8 @@ import withAuth from '@/hoc/withAuth';
 import React, { useState, useRef, useEffect } from 'react'
 import { getPriorities } from '@/services/priorityService';
 import { getLocations } from '@/services/locationService';
+import { getContentTypes } from '@/services/contentTypeService';
+import { createContent } from '@/services/contentService';
 import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
 import TagsSearch from "../ui/TagSearchComponent"
 import LocationSearch from "../ui/LocationSearchComponent"
@@ -29,33 +31,37 @@ function Create() {
 
   // Form fields state
   const [priority, setPriority] = useState('')
-  const [contentType, setContentType] = useState('')
+  
   const [title, setTitle] = useState('')
   interface Location {
     id: string;
     name: string;
   }
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
+ 
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
-  const [attachments, setAttachments] = useState<FileList | null>(null)
+  //const [attachments, setAttachments] = useState<FileList | null>(null)
 
   // Priority state
   const [priorityOptions, setPriorityOptions] = useState<{ value: string, label: string }[]>([])
   const [isLoadingPriorities, setIsLoadingPriorities] = useState(true)
 
   // Location state
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [locationOptions, setLocationOptions] = useState<Location[]>([])
   const [isLoadingLocations, setIsLoadingLocations] = useState(true)
 
-  // Content type options
-  const contentTypeOptions = [
-    { value: 'news', label: 'News' },
-    { value: 'feature', label: 'Feature' },
-    { value: 'interview', label: 'Interview' },
-    { value: 'review', label: 'Review' },
-    { value: 'opinion', label: 'Opinion' },
-    { value: 'breaking', label: 'Breaking News' }
-  ]
+
+  // content type state
+  interface ContentType {
+    id: string;
+    content_type: string;
+  }
+  const [selectedContentType, setSelectedContentType] = useState('')
+  const [contentTypeOptions, setContentTypeOptions] = useState<ContentType[]>([])
+  const [isLoadingContentType, setIsLoadingContentType] = useState(true)
+
+ 
+
 
   useEffect(() => {
     setIsEditorReady(true)
@@ -121,8 +127,33 @@ function Create() {
       }
     }
 
+    const fetchContentTypes = async () => {
+      try {
+        setIsLoadingLocations(true)
+        const response = await getContentTypes()
+
+        if (response.success && response.data && Array.isArray(response.data)) {
+          // Fixed mapping to match your API response structure
+          const content_types = response.data
+            .filter((item: any) => item.content_type && typeof item.content_type === 'string') // Filter out invalid entries
+            .map((item: any) => ({
+              id: item.id.toString(),
+              content_type: item.content_type.trim()
+            }))
+          setContentTypeOptions(content_types)
+        } else {
+          console.error('Invalid locations response structure:', response)
+        }
+      } catch (error) {
+        console.error('Error fetching locations:', error)
+      } finally {
+        setIsLoadingLocations(false)
+      }
+    }
+
     fetchPriorities()
     fetchLocations()
+    fetchContentTypes()
   }, [])
 
   const updateActiveFormats = () => {
@@ -233,34 +264,59 @@ function Create() {
     }
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /*const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAttachments(e.target.files)
-  }
+  }*/
+  const isFormValid = priority &&
+                      selectedContentType &&
+                      selectedLocation?.name &&
+                      title &&
+                      editorData;
 
-  const handleSubmit = (action: 'save' | 'upload') => {
-    const formData = {
-      priority,
-      contentType,
-      title,
-      location: selectedLocation?.id || '', // Use ID for API compatibility
-      content: editorData,
-      tags: selectedTags.map(tag => tag.name), // Extract tag names
-      attachments: attachments ? Array.from(attachments).map(file => file.name) : []
+  const handleSubmit = async (action: 'save' | 'draft') => {
+    const attachment = files
+      .filter((f) => f.uploadedUrl)
+      .map((f) => ({ url: f.uploadedUrl }));
+
+    const status = action === 'save' ? 2 : 1;
+
+    try {
+      //const formData = new FormData();
+      //formData.append('username', username);
+      const formData = {
+        priority,
+        content_type: selectedContentType,
+        location: selectedLocation?.name || '',
+        tags: selectedTag?.name || '',
+        headline: title,
+        description: editorData,
+        attachments: attachment,
+        status,
+      };
+
+      const authResult = await createContent(formData);
+
+      if (authResult.success) {
+        // ✅ Update auth context immediately
+      } else {
+        // setError(authResult?.message || 'Invalid credentials.');
+        // setLoading(false);
+      }
+    } catch (error: any) {
+      // setError(error?.message || 'Login failed. Please try again.');
+      // setLoading(false);
     }
-
-    console.log(`${action === 'save' ? 'Saving' : 'Uploading'} story:`, formData)
-    alert(`Story ${action === 'save' ? 'saved' : 'uploaded'} successfully!`)
-  }
+  };
 
   const handleCancel = () => {
     if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
       setPriority('')
-      setContentType('')
+      setSelectedContentType('')
       setTitle('')
       setSelectedLocation(null)
       setEditorData('')
-      setSelectedTags([])
-      setAttachments(null)
+      setSelectedTag(null)
+      //setAttachments(null)
       if (editorRef.current) {
         editorRef.current.innerHTML = ''
       }
@@ -336,7 +392,7 @@ function Create() {
     for (let i = 0; i < updatedFiles.length; i++) {
       const fileMeta = updatedFiles[i];
 
-      // ✅ Skip already uploaded files
+      // Skip already uploaded files
       if (fileMeta.uploadedUrl) continue;
 
       try {
@@ -444,11 +500,28 @@ function Create() {
                   Cancel
                 </button>
                 <button
-                  onClick={() => handleSubmit('upload')}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                  onClick={() => handleSubmit("draft")}
+                  disabled={!isFormValid}
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${
+                    isFormValid
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-green-400 cursor-not-allowed"
+                  }`}
                 >
-                  Upload Story
+                  Draft Story
                 </button>
+                <button
+                  onClick={() => handleSubmit("save")}
+                  disabled={!isFormValid}
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${
+                    isFormValid
+                      ? "bg-blue-600 hover:bg-blue-700"
+                      : "bg-blue-400 cursor-not-allowed"
+                  }`}
+                >
+                  Create Story
+                </button>
+                
               </div>
             </div>
           </div>
@@ -492,14 +565,14 @@ function Create() {
                   Content Type
                 </label>
                 <select
-                  value={contentType}
-                  onChange={(e) => setContentType(e.target.value)}
+                  value={selectedContentType}
+                  onChange={(e) => setSelectedContentType(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
                 >
                   <option value="">Select Content Type</option>
                   {contentTypeOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
+                    <option key={option.id} value={option.id}>
+                      {option.content_type}
                     </option>
                   ))}
                 </select>
@@ -718,7 +791,7 @@ function Create() {
                 {/* LEFT: Dropzone */}
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="relative block w-full cursor-pointer appearance-none rounded border border-dashed border-primary bg-gray px-4 py-4 dark:bg-meta-4 sm:py-7.5"
+                  className="relative block w-full cursor-pointer appearance-none rounded border border-dashed border-orange-400 bg-gray px-4 py-4 dark:bg-meta-4 sm:py-7.5"
                 >
                   <input
                     type="file"
