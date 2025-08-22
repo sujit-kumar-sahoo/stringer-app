@@ -1,26 +1,11 @@
-
 'use client'
 import withAuth from '@/hoc/withAuth';
 
 import React, { useState, useEffect } from 'react'
-import { ChevronDown, Search, Grid3X3, List, MapPin, Clock,  FileText, AlertCircle, Image, Video, Headphones, File, Lock,  Calendar , X, Check } from 'lucide-react'
+import { ChevronDown, Search, Grid3X3, List, MapPin, Clock, FileText, AlertCircle, Image, Video, Headphones, File, Lock, Calendar, X, Check } from 'lucide-react'
+import Pagination from '../ui/pagination';
 
-interface Activity {
-  id: string
-  type: 'edit' | 'upload'
-  user: string
-  action: string
-  storyTitle: string
-  status: 'Input WIP' | 'Waiting in Input' | 'Published' | 'Draft'
-  timestamp: string
-  location: string
-  priority: 'High' | 'Medium' | 'Breaking' | 'Low'
-  waitingTime: string
-  link?: string
-  fileTypes?: ('image' | 'video' | 'document' | 'audio' | 'pdf')[]
-  isLocked?: boolean
-  lockedBy?: string
-}
+import { fetchActivities, Activity, ApiResponse, FetchActivitiesParams } from '@/services/paginationService';
 
 const Listing: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -31,77 +16,57 @@ const Listing: React.FC = () => {
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
-  const [currentUser] = useState('Priya') 
 
-  const [activities, setActivities] = useState<Activity[]>([
-    {
-      id: '1',
-      type: 'upload',
-      user: 'Priya',
-      action: 'uploaded a story',
-      storyTitle: 'Testing By Bikash2',
-      status: 'Waiting in Input',
-      timestamp: '11 Aug, 2025 02:53PM',
-      location: 'Pipili, Kendrapada',
-      priority: 'High',
-      waitingTime: 'Waiting 20 hr, 40 min',
-      link: '#',
-      fileTypes: ['document', 'image'],
-      isLocked: false
-    },
-    {
-      id: '2',
-      type: 'upload',
-      user: 'Priya',
-      action: 'uploaded a story',
-      storyTitle: 'Father\'s Promise: ସେବିତୀଙ୍କ କାହାଣୀ ଏକ ଶପଥ...ଏଁ ପିତା ସେବିତୀଙ୍କ, ଦେଶ ହିତ ପୁତ୍ରପ୍ରସୁତା ପୁତ୍ର ସାନାଗ କଠିତ',
-      status: 'Waiting in Input',
-      timestamp: '02 Jun, 2025 05:14PM',
-      location: 'Odisha',
-      priority: 'High',
-      waitingTime: 'Waiting 70 d, 18 hr, 39 min',
-      link: '#',
-      fileTypes: ['video', 'audio', 'document'],
-      isLocked: false
-    },
-    {
-      id: '3',
-      type: 'upload',
-      user: 'Priya',
-      action: 'uploaded a story',
-      storyTitle: 'NEW DELHI: The Bhartiya Janata Party',
-      status: 'Waiting in Input',
-      timestamp: '05 Jun, 2025 03:53PM',
-      location: 'Odisha',
-      priority: 'High',
-      waitingTime: 'Waiting 67 d, 20 hr, 0 min',
-      link: '#',
-      fileTypes: ['pdf'],
-      isLocked: true,
-      lockedBy: 'Priya'
-    },
-    {
-      id: '4',
-      type: 'upload',
-      user: 'Priya',
-      action: 'uploaded a story',
-      storyTitle: 'test 03 30 jun',
-      status: 'Waiting in Input',
-      timestamp: '30 Jun, 2025 04:11PM',
-      location: 'Joisingha',
-      priority: 'Medium',
-      waitingTime: 'Waiting 42 d, 19 hr, 39 min',
-      link: '#',
-      fileTypes: [],
-      isLocked: false
-    }
-  ])
-
+  // API-related state
+  const [activities, setActivities] = useState<Activity[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalRecords, setTotalRecords] = useState(0)
+  const [limit] = useState(50)
+  const [error, setError] = useState<string | null>(null)
 
-  // Dropdown options (excluding "All" options as we now support multi-select)
-  const locationOptions = ['Bhubaneswar', 'Cuttack', 'Puri', 'Berhampur', 'Rourkela', 'Sambalpur', 'Balasore', 'Angul', 'Bargarh', 'Bhadrak', 'Bolangir', 'Dhenkanal', 'Gajapati', 'Ganjam', 'Jagatsinghpur', 'Jajpur', 'Jharsuguda', 'Kalahandi', 'Kandhamal', 'Kendrapara', 'Kendujhar', 'Khordha', 'Koraput', 'Malkangiri', 'Mayurbhanj', 'Nabarangpur', 'Nayagarh', 'Nuapada', 'Rayagada', 'Subarnapur', 'Sundargarh', 'Pipili', 'Odisha', 'Joisingha']
+  // Dropdown options
+  const locationOptions = ['Bhubaneswar', 'Cuttack', 'Puri', 'Berhampur', 'Rourkela', 'Sambalpur', 'Balasore', 'Angul', 'Bargarh', 'Bhadrak', 'Bolangir', 'Dhenkanal', 'Gajapati', 'Ganjam', 'Jagatsinghpur', 'Jajpur', 'Jharsuguda', 'Kalahandi', 'Kandhamal', 'Kendrapara', 'Kendujhar', 'Khordha', 'Koraput', 'Malkangiri', 'Mayurbhanj', 'Nabarangpur', 'Nayagarh', 'Nuapada', 'Rayagada', 'Subarnapur', 'Sundargarh', 'Pipili', 'Odisha', 'Joisingha', 'Anandpur']
   const priorityOptions = ['Breaking', 'High', 'Medium', 'Low']
+
+  const loadActivities = async (page: number = 1) => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const params: FetchActivitiesParams = {
+        page,
+        limit,
+        appliedSearchTerm,
+        dateFrom,
+        dateTo,
+        selectedLocations,
+        selectedPriorities
+      }
+
+      const data = await fetchActivities(params)
+
+      setActivities(data.results)
+      setTotalRecords(data.total_records)
+      setCurrentPage(page)
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+      setActivities([])
+      setTotalRecords(0)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Initial load
+  useEffect(() => {
+    loadActivities(1)
+  }, [])
+
+  useEffect(() => {
+    loadActivities(1)
+  }, [appliedSearchTerm, dateFrom, dateTo, selectedLocations, selectedPriorities])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -114,40 +79,6 @@ const Listing: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  useEffect(() => {
-    setTimeout(() => setIsLoading(false), 1000)
-  }, [])
-
-  const toggleLock = (activityId: string, event: React.MouseEvent) => {
-    event.stopPropagation()
-    setActivities(prev => prev.map(activity => {
-      if (activity.id === activityId) {
-        return {
-          ...activity,
-          isLocked: !activity.isLocked,
-          lockedBy: !activity.isLocked ? currentUser : undefined
-        }
-      }
-      return activity
-    }))
-  }
-
-  // Helper function to parse date string to Date object
-  const parseDate = (dateStr: string) => {
-    // Convert "11 Aug, 2025 02:53PM" format to Date
-    const parts = dateStr.split(' ')
-    const day = parseInt(parts[0])
-    const month = parts[1]
-    const year = parseInt(parts[2])
-    
-    const months: { [key: string]: number } = {
-      'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
-      'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
-    }
-    
-    return new Date(year, months[month], day)
-  }
 
   const applySearch = () => {
     setAppliedSearchTerm(searchTerm)
@@ -164,16 +95,16 @@ const Listing: React.FC = () => {
 
   // Multi-select handlers
   const toggleLocationSelection = (location: string) => {
-    setSelectedLocations(prev => 
-      prev.includes(location) 
+    setSelectedLocations(prev =>
+      prev.includes(location)
         ? prev.filter(l => l !== location)
         : [...prev, location]
     )
   }
 
   const togglePrioritySelection = (priority: string) => {
-    setSelectedPriorities(prev => 
-      prev.includes(priority) 
+    setSelectedPriorities(prev =>
+      prev.includes(priority)
         ? prev.filter(p => p !== priority)
         : [...prev, priority]
     )
@@ -195,45 +126,39 @@ const Listing: React.FC = () => {
     setSelectedPriorities([])
   }
 
-  // Filter activities
-  const getFilteredActivities = () => {
-    let filtered = activities.filter(activity => {
-      // Search filter (using applied search term)
-      const searchMatch = !appliedSearchTerm ||
-        activity.storyTitle.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
-        activity.user.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
-        activity.location.toLowerCase().includes(appliedSearchTerm.toLowerCase())
-
-      // Date range filter
-      let dateMatch = true
-      if (dateFrom || dateTo) {
-        const activityDate = parseDate(activity.timestamp)
-        if (dateFrom) {
-          const fromDate = new Date(dateFrom)
-          dateMatch = dateMatch && activityDate >= fromDate
-        }
-        if (dateTo) {
-          const toDate = new Date(dateTo)
-          toDate.setHours(23, 59, 59, 999) // Include the entire "to" date
-          dateMatch = dateMatch && activityDate <= toDate
-        }
-      }
-
-      // Location filter - if no locations selected, show all
-      const locationMatch = selectedLocations.length === 0 || 
-        selectedLocations.includes(activity.location)
-
-      // Priority filter - if no priorities selected, show all
-      const priorityMatch = selectedPriorities.length === 0 || 
-        selectedPriorities.includes(activity.priority)
-
-      return searchMatch && dateMatch && locationMatch && priorityMatch
-    })
-
-    return filtered
+  const handlePageChange = (page: number) => {
+    loadActivities(page)
   }
 
-  const filteredActivities = getFilteredActivities()
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+  }
+
+  const calculateWaitingTime = (createdDate: string) => {
+    const created = new Date(createdDate)
+    const now = new Date()
+    const diffMs = now.getTime() - created.getTime()
+
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+
+    if (days > 0) {
+      return `${days} d, ${hours} hr, ${minutes} min`
+    } else if (hours > 0) {
+      return `${hours} hr, ${minutes} min`
+    } else {
+      return `${minutes} min`
+    }
+  }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -278,30 +203,34 @@ const Listing: React.FC = () => {
     }
   }
 
-  const renderFileTypeIcons = (fileTypes: string[] = []) => {
-    if (!fileTypes || fileTypes.length === 0) {
+  const renderFileTypeIcons = (attachments: any[] = []) => {
+    if (!attachments || attachments.length === 0) {
       return null
     }
+
+    const fileTypes = attachments.map(att => {
+      return 'document' // placeholder
+    })
 
     return (
       <div className="flex items-center" style={{ gap: '-6px' }}>
         {fileTypes.slice(0, 4).map((fileType, index) => (
-          <div 
+          <div
             key={index}
-            style={{ 
+            style={{
               marginLeft: index > 0 ? '-6px' : '0',
-              zIndex: fileTypes.length - index 
+              zIndex: fileTypes.length - index
             }}
           >
             {getFileTypeIcon(fileType)}
           </div>
         ))}
         {fileTypes.length > 4 && (
-          <div 
+          <div
             className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-500 text-white text-xs font-medium"
-            style={{ 
+            style={{
               marginLeft: '-6px',
-              zIndex: 0 
+              zIndex: 0
             }}
           >
             +{fileTypes.length - 4}
@@ -311,14 +240,14 @@ const Listing: React.FC = () => {
     )
   }
 
-  const MultiSelectDropdown = ({ 
-    label, 
-    selectedItems, 
-    options, 
-    onToggleItem, 
-    onSelectAll, 
+  const MultiSelectDropdown = ({
+    label,
+    selectedItems,
+    options,
+    onToggleItem,
+    onSelectAll,
     onClearAll,
-    dropdownKey 
+    dropdownKey
   }: {
     label: string
     selectedItems: string[]
@@ -337,9 +266,9 @@ const Listing: React.FC = () => {
         className="flex items-center justify-between space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 min-w-[140px] transition-colors"
       >
         <span className="truncate">
-          {selectedItems.length === 0 
-            ? label 
-            : selectedItems.length === 1 
+          {selectedItems.length === 0
+            ? label
+            : selectedItems.length === 1
               ? selectedItems[0]
               : `${selectedItems.length} selected`}
         </span>
@@ -348,7 +277,6 @@ const Listing: React.FC = () => {
 
       {openDropdown === dropdownKey && (
         <div className="absolute z-30 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-y-auto">
-          {/* Select All / Clear All buttons */}
           <div className="p-2 border-b border-gray-200 bg-gray-50">
             <div className="flex justify-between">
               <button
@@ -371,8 +299,7 @@ const Listing: React.FC = () => {
               </button>
             </div>
           </div>
-          
-          {/* Options list */}
+
           {options.map((option) => (
             <div
               key={option}
@@ -380,9 +307,7 @@ const Listing: React.FC = () => {
                 e.stopPropagation()
                 onToggleItem(option)
               }}
-              className={`flex items-center px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer transition-colors ${
-                selectedItems.includes(option) ? 'bg-blue-50' : ''
-              }`}
+              className={`flex items-center px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer transition-colors ${selectedItems.includes(option) ? 'bg-blue-50' : ''}`}
             >
               <div className="flex items-center justify-center w-4 h-4 mr-3">
                 {selectedItems.includes(option) && (
@@ -410,7 +335,7 @@ const Listing: React.FC = () => {
       >
         <div className="flex items-center space-x-2">
           <Calendar size={16} />
-          <span className="truncate">Date Range</span>
+          <span className="truncate">Date</span>
         </div>
         <ChevronDown size={16} className={`transition-transform duration-200 ${openDropdown === 'dateRange' ? 'rotate-180' : ''}`} />
       </button>
@@ -484,19 +409,35 @@ const Listing: React.FC = () => {
     )
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle size={64} className="mx-auto text-red-500 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">Error loading data</h3>
+          <p className="text-gray-500 mb-4">{error}</p>
+          <button
+            onClick={() => loadActivities(currentPage)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sticky Header */}
       <div className="sticky top-0 z-20 bg-gray-50 shadow-sm">
         <div className="max-w-7xl mx-auto">
-          {/* Filters and Controls */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* Filter Buttons */}
+            <div className="flex flex-col lg:flex-row items-baseline lg:justify-between gap-4">
               <div className="flex flex-wrap gap-3">
                 <DateRangeSelector />
                 <MultiSelectDropdown
-                  label="By Location"
+                  label="Location"
                   selectedItems={selectedLocations}
                   options={locationOptions}
                   onToggleItem={toggleLocationSelection}
@@ -505,7 +446,7 @@ const Listing: React.FC = () => {
                   dropdownKey="location"
                 />
                 <MultiSelectDropdown
-                  label="By Priority"
+                  label="Priority"
                   selectedItems={selectedPriorities}
                   options={priorityOptions}
                   onToggleItem={togglePrioritySelection}
@@ -513,61 +454,75 @@ const Listing: React.FC = () => {
                   onClearAll={clearAllPriorities}
                   dropdownKey="priority"
                 />
-                
-                {/* Conditional Clear Filters Button */}
-                {(appliedSearchTerm || 
-                  dateFrom || 
-                  dateTo || 
-                  selectedLocations.length > 0 || 
+
+                {(appliedSearchTerm ||
+                  dateFrom ||
+                  dateTo ||
+                  selectedLocations.length > 0 ||
                   selectedPriorities.length > 0) && (
-                  <button
-                    onClick={clearFilters}
-                    className="px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded-2xl hover:bg-red-50 transition-colors bg-red-100"
-                  >
-                    <div className="flex items-center gap-2">
-                      <X size={16} />
-                      <span>Clear Filters</span>
-                    </div>
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded-2xl hover:bg-red-50 transition-colors bg-red-100"
+                    >
+                      <div className="flex items-center gap-2">
+                        <X size={16} />
+                        <span>Clear Filters</span>
+                      </div>
+                    </button>
+                  )}
               </div>
 
-              {/* Search and View Toggle */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && applySearch()}
-                      placeholder="Search stories..."
-                      className="pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-64 bg-white"
-                    />
+              <div>
+                <div className='flex items-center gap-4'>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && applySearch()}
+                        placeholder="Search stories..."
+                        className="pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-64 bg-white"
+                      />
+                    </div>
+                    <button
+                      onClick={applySearch}
+                      className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                    >
+                      Apply
+                    </button>
                   </div>
-                  <button
-                    onClick={applySearch}
-                    className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                  >
-                    Apply
-                  </button>
+
+                  <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden p-1">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
+                    >
+                      <Grid3X3 size={18} />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
+                    >
+                      <List size={18} />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden p-1">
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
-                  >
-                    <Grid3X3 size={18} />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
-                  >
-                    <List size={18} />
-                  </button>
-                </div>
+                {totalRecords > 0 && (
+                  <div className="flex justify-end mt-2">
+                  <div className="w-80 float-end">
+
+                      <Pagination
+                        offset={(currentPage - 1) * limit}
+                        totalRecords={totalRecords}
+                        limit={limit}
+                        onPageChange={handlePageChange}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -576,51 +531,83 @@ const Listing: React.FC = () => {
 
       {/* Content Area */}
       <div className="max-w-7xl mx-auto py-6">
-       
-
         {/* Content Grid */}
         <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
-          {filteredActivities.map((activity) => {
+          {activities.map((activity) => {
+            const waitingTime = calculateWaitingTime(activity.created_date)
+
             return (
               <div
                 key={activity.id}
-                className={`bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-all duration-200 cursor-pointer overflow-hidden relative ${activity.isLocked ? 'bg-gray-100' : ''}`}
+                className={`bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-all duration-200 cursor-pointer overflow-hidden relative ${activity.locked ? 'bg-gray-100' : ''}`}
                 onClick={() => {
-                  if (!activity.isLocked) {
-                    console.log('Card clicked:', activity.id);
+                  if (!activity.locked) {
+
                   }
                 }}
               >
-                {/* Status Badge - positioned at top right */}
-                <div className="relative">
-                    <div
-                          className="absolute top-0 right-0 bg-teal-600 text-white font-medium"
-                          style={{
-                          fontSize: "0.5rem",
-                          lineHeight: "0.6rem",
-                          paddingTop: "0.2rem",
-                          paddingBottom: "0.2rem",
-                          paddingLeft: "0.2rem",
-                          paddingRight: "0.2rem",
-                          borderRadius: "0px 6px"
-                          }}
-                    >
-                    Waiting in Input
-                    </div>
-                </div>
 
-                {/* Lock Overlay */}
-                {activity.isLocked && (
-                  <div className="absolute inset-0 bg-gray-500 bg-opacity-30 flex items-center justify-center z-10">
-                    <div className="bg-white p-4 rounded-full shadow-lg">
-                      <Lock size={32} className="text-gray-600" />
+                {activity.status_text && activity.status_text.trim() !== '' ? (
+                  <div className="relative">
+                    <div
+                      className="absolute top-0 right-0 bg-teal-600 text-white font-medium"
+                      style={{
+                        fontSize: "0.5rem",
+                        lineHeight: "0.6rem",
+                        paddingTop: "0.2rem",
+                        paddingBottom: "0.2rem",
+                        paddingLeft: "0.2rem",
+                        paddingRight: "0.2rem",
+                        borderRadius: "0px 6px"
+                      }}
+                    >
+                      {activity.status_text}
                     </div>
                   </div>
-                )}
+                ) : null}
 
-                {/* Card Content */}
-                <div className={`p-4 pt-4 ${activity.isLocked ? 'opacity-70' : ''}`}>
-                  {/* Header with Icon and Date */}
+                {activity.locked ? (
+                  <div className="absolute inset-0 bg-gray-500 bg-opacity-30 flex flex-col items-center justify-center z-10">
+                    <div className="bg-white p-4 rounded-full shadow-lg mb-10">
+                      <Lock size={32} className="text-gray-600" />
+                    </div>
+                    <div
+                      style={{
+                        backgroundColor: "rgb(236 39 39 / 79%)",
+                        color: "#fff",
+
+                        paddingTop: "0.35rem",
+                        paddingBottom: "0.35rem",
+                        paddingLeft: ".45rem",
+                        paddingRight: ".45rem",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.5rem",
+                        width: "100%",
+
+                      }}
+                    >
+                      <Lock size={10} />
+                      <span
+                        style={{
+                          fontSize: "0.575rem",
+                          lineHeight: "0.76",
+                          fontWeight: 500
+                        }}
+                      >
+                        Locked
+                      </span>
+                    </div>
+
+
+
+
+
+                  </div>
+                ) : null}
+
+                <div className={`p-4 pt-4 ${activity.locked ? 'opacity-70' : ''}`}>
                   <div
                     className="flex items-start gap-3 mb-3"
                     style={{
@@ -630,33 +617,15 @@ const Listing: React.FC = () => {
                     }}
                   >
                     <div>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="lucide lucide-calendar"
-                        aria-hidden="true"
-                      >
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
+                      <Calendar size={14} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-gray-500">
-                        {activity.timestamp}
+                        {formatDate(activity.created_date)}
                       </div>
                     </div>
                   </div>
 
-                  {/* Title */}
                   <h3
                     className="font-semibold text-gray-900 text-base leading-tight"
                     style={{
@@ -666,10 +635,9 @@ const Listing: React.FC = () => {
                       paddingBottom: "20px"
                     }}
                   >
-                    {activity.storyTitle}
+                    {activity.headline}
                   </h3>
 
-                  {/* Location and Priority */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1 text-gray-600">
                       <MapPin size={14} />
@@ -677,80 +645,50 @@ const Listing: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <div className="text-xs text-gray-500">priority</div>
-                      <div className={`text-sm font-semibold ${getPriorityColor(activity.priority)}`}>
-                        {activity.priority}
+                      <div className={`text-sm font-semibold ${getPriorityColor(activity.priority_text)}`}>
+                        {activity.priority_text}
                       </div>
                     </div>
                   </div>
 
-                  {/* Author and File Icon */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-sm text-gray-600">
-                      By <span className="font-medium text-gray-900">{activity.user}</span>
+                      By <span className="font-medium text-gray-900">{activity.created_name}</span>
                     </div>
                   </div>
 
-                  {/* Waiting Time and Lock Status */}
-                  <div style={{display: "flex",justifyContent: "space-between", alignItems: "center",}}>
-                    {renderFileTypeIcons(activity.fileTypes)}
-                    
-                    {activity.isLocked ? (
-                      <div
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    {renderFileTypeIcons(activity.attachments)}
+
+                    <div
+                      style={{
+                        backgroundColor: "#dc2626",
+                        color: "#fff",
+                        borderRadius: "1.375rem",
+                        paddingTop: "0.35rem",
+                        paddingBottom: "0.35rem",
+                        paddingLeft: ".45rem",
+                        paddingRight: ".45rem",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.5rem",
+                        width: "fit-content",
+                        marginLeft: "auto"
+                      }}
+                    >
+                      <Clock size={12} />
+                      <span
                         style={{
-                          backgroundColor: "#dc2626", 
-                          color: "#fff", 
-                          borderRadius: "1.375rem", 
-                          paddingTop: "0.35rem",
-                          paddingBottom: "0.35rem",
-                          paddingLeft: ".45rem",
-                          paddingRight: ".45rem",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "0.5rem",
-                          width: "fit-content"
+                          fontSize: "0.575rem",
+                          lineHeight: "0.76",
+                          fontWeight: 500
                         }}
                       >
-                        <Lock size={10} />
-                        <span
-                          style={{
-                            fontSize: "0.575rem",
-                            lineHeight: "0.76",
-                            fontWeight: 500
-                          }}
-                        >
-                          Locked by {activity.lockedBy}
-                        </span>
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          backgroundColor: "#dc2626", 
-                          color: "#fff", 
-                          borderRadius: "1.375rem", 
-                          paddingTop: "0.35rem",
-                          paddingBottom: "0.35rem",
-                          paddingLeft: ".45rem",
-                          paddingRight: ".45rem",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "0.5rem",
-                          width: "fit-content"
-                        }}
-                      >
-                        <Clock size={12} />
-                        <span
-                          style={{
-                            fontSize: "0.575rem",
-                            lineHeight: "0.76",
-                            fontWeight: 500
-                          }}
-                        >
-                          Waiting {activity.waitingTime.replace('Waiting ', '')}
-                        </span>
-                      </div>
-                    )}
+                        Waiting {waitingTime}
+                      </span>
+                    </div>
+
                   </div>
                 </div>
               </div>
@@ -758,7 +696,7 @@ const Listing: React.FC = () => {
           })}
         </div>
 
-        {filteredActivities.length === 0 && (
+        {activities.length === 0 && !isLoading && (
           <div className="text-center py-20">
             <div className="text-gray-300 mb-6">
               <AlertCircle size={64} className="mx-auto" />
@@ -772,4 +710,4 @@ const Listing: React.FC = () => {
   )
 }
 
-export default withAuth(Listing)
+export default withAuth(Listing);
