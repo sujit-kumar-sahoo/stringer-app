@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { getPriorities } from '@/services/priorityService';
 import { getLocations } from '@/services/locationService';
 import { getContentTypes } from '@/services/contentTypeService';
+import { createContent } from '@/services/contentService';
 import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
 import TagsSearch from "../ui/TagSearchComponent"
 import LocationSearch from "../ui/LocationSearchComponent"
@@ -271,25 +272,41 @@ function Create() {
                       selectedLocation?.name &&
                       title &&
                       editorData;
-  const handleSubmit = (action: 'save' | 'draft') => {
-    const attachment = files
-          .filter((f) => f.uploadedUrl)
-          .map((f) => ({ url: f.uploadedUrl }));
-    const status = action === 'save' ? 2 : 1;
-    const formData = {
-      priority,
-      content_type:selectedContentType,
-      location: selectedLocation?.name || '', // Use ID for API compatibility
-      tags: selectedTag?.id || '', // Extract tag names
-      headline:title,
-      description: editorData,
-      attachments: attachment,
-      status: status
-    }
 
-    console.log(`${action === 'save' ? 'Saving' : 'Uploading'} story:`, formData)
-    alert(`Story ${action === 'save' ? 'saved' : 'uploaded'} successfully!`)
-  }
+  const handleSubmit = async (action: 'save' | 'draft') => {
+    const attachment = files
+      .filter((f) => f.uploadedUrl)
+      .map((f) => ({ url: f.uploadedUrl }));
+
+    const status = action === 'save' ? 2 : 1;
+
+    try {
+      //const formData = new FormData();
+      //formData.append('username', username);
+      const formData = {
+        priority,
+        content_type: selectedContentType,
+        location: selectedLocation?.name || '',
+        tags: selectedTag?.name || '',
+        headline: title,
+        description: editorData,
+        attachments: attachment,
+        status,
+      };
+
+      const authResult = await createContent(formData);
+
+      if (authResult.success) {
+        // ✅ Update auth context immediately
+      } else {
+        // setError(authResult?.message || 'Invalid credentials.');
+        // setLoading(false);
+      }
+    } catch (error: any) {
+      // setError(error?.message || 'Login failed. Please try again.');
+      // setLoading(false);
+    }
+  };
 
   const handleCancel = () => {
     if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
