@@ -10,9 +10,11 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  Database
+  Database,
+  RefreshCw
 } from 'lucide-react';
 import { useSidebar } from '../../../context/SidebarContext';
+import { useCount } from '../../../context/CountContext';
 
 // Type definitions
 type ColorType = 'blue' | 'emerald' | 'purple' | 'orange' | 'yellow';
@@ -21,7 +23,7 @@ interface SubMenuItem {
   id: string;
   label: string;
   href: string;
-  count?: number;
+  countKey?: keyof import('../../../context/CountContext').CountData;
 }
 
 interface MenuItem {
@@ -32,6 +34,7 @@ interface MenuItem {
   color: ColorType;
   href: string;
   subItems?: SubMenuItem[];
+  countKey?: keyof import('../../../context/CountContext').CountData; 
 }
 
 interface SidebarItemProps {
@@ -50,9 +53,11 @@ interface SectionHeaderProps {
 
 const DesktopSidebar: React.FC = () => {
   const { isOpen, toggleSidebar } = useSidebar();
+  const { counts, isLoading, refreshCounts } = useCount(); 
   const pathname = usePathname();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
+  
   const mainItems: MenuItem[] = [
     { 
       id: 'dashboard', 
@@ -72,13 +77,39 @@ const DesktopSidebar: React.FC = () => {
       label: 'Input', 
       color: 'purple', 
       href: '/input',
+      
+      
       subItems: [
-        { id: 'input-listing', label: 'Wait List', href: '/input/wait-list', count: 24 },
-        { id: 'input-details', label: 'Details', href: '/input/details', count: 24 },
-        { id: 'input-wip', label: 'Input WIP', href: '/input/wip', count: 24 },
-        { id: 'input-to-stringer', label: 'Input to Stringer', href: '/input/to-stringer', count: 24 },
-        { id: 'output-to-input', label: 'Output to Input', href: '/output/to-input', count: 24 },
-        { id: 'published', label: 'Published', href: '/published', count: 24 },
+        { 
+          id: 'input-listing', 
+          label: 'Wait List', 
+          href: '/input/wait-list', 
+          countKey: 'waitList'
+        },
+        { 
+          id: 'input-wip', 
+          label: 'Input WIP', 
+          href: '/input/wip', 
+          countKey: 'inputWip' 
+        },
+        { 
+          id: 'input-to-stringer', 
+          label: 'Input to Stringer', 
+          href: '/input/to-stringer', 
+          countKey: 'inputToStringer' 
+        },
+        { 
+          id: 'output-to-input', 
+          label: 'Output to Input', 
+          href: '/output/to-input', 
+          countKey: 'outputToInput' 
+        },
+        { 
+          id: 'published', 
+          label: 'Published', 
+          href: '/published', 
+          countKey: 'published' 
+        },
       ]
     },
     { 
@@ -103,6 +134,10 @@ const DesktopSidebar: React.FC = () => {
         ? prev.filter(menuId => menuId !== id)
         : [...prev, id]
     );
+  };
+
+  const handleRefreshCounts = async () => {
+    await refreshCounts();
   };
 
   const isSubItemActive = (item: MenuItem): boolean => {
@@ -144,6 +179,16 @@ const DesktopSidebar: React.FC = () => {
       }
     };
 
+    // Get the count for this item
+    const getItemCount = () => {
+      if (item.countKey) {
+        return counts[item.countKey];
+      }
+      return item.count;
+    };
+
+    const itemCount = getItemCount();
+
     // Render main item content
     const MainItemContent = () => (
       <div
@@ -168,7 +213,7 @@ const DesktopSidebar: React.FC = () => {
           <div className="flex items-center justify-between flex-1">
             <span className="font-semibold text-sm">{item.label}</span>
             <div className="flex items-center space-x-2">
-              {item.count && (
+              {itemCount !== undefined && itemCount > 0 && (
                 <span className={`
                   px-2.5 py-1 rounded-full text-xs font-bold
                   ${isParentActive 
@@ -176,7 +221,7 @@ const DesktopSidebar: React.FC = () => {
                     : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
                   }
                 `}>
-                  {item.count}
+                  {isLoading ? '...' : itemCount}
                 </span>
               )}
               {hasSubItems && (
@@ -212,6 +257,8 @@ const DesktopSidebar: React.FC = () => {
           <div className="ml-6 mt-1 space-y-1 border-l-2 border-slate-700/50 pl-4">
             {item.subItems?.map((subItem) => {
               const isSubActive = pathname === subItem.href;
+              const subItemCount = subItem.countKey ? counts[subItem.countKey] : undefined;
+              
               return (
                 <Link
                   key={subItem.id}
@@ -226,7 +273,7 @@ const DesktopSidebar: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span>{subItem.label}</span>
-                    {subItem.count && (
+                    {subItemCount !== undefined && subItemCount > 0 && (
                       <span className={`
                         px-2 py-0.5 rounded-full text-xs font-bold
                         ${isSubActive 
@@ -234,7 +281,7 @@ const DesktopSidebar: React.FC = () => {
                           : 'bg-slate-600/50 text-slate-400'
                         }
                       `}>
-                        {subItem.count}
+                        {isLoading ? '...' : subItemCount}
                       </span>
                     )}
                   </div>
@@ -248,15 +295,20 @@ const DesktopSidebar: React.FC = () => {
         {isMinimized && (
           <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-2 bg-slate-800 border border-orange-400/30 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
             {item.label}
-            {item.count && <span className="ml-1 font-bold text-orange-300">({item.count})</span>}
+            {itemCount && itemCount > 0 && <span className="ml-1 font-bold text-orange-300">({itemCount})</span>}
             {hasSubItems && (
               <div className="mt-1 pt-1 border-t border-slate-600/50">
-                {item.subItems?.map((subItem) => (
-                  <div key={subItem.id} className="text-xs text-slate-300">
-                    {subItem.label}
-                    {subItem.count && <span className="ml-1 text-orange-300">({subItem.count})</span>}
-                  </div>
-                ))}
+                {item.subItems?.map((subItem) => {
+                  const subItemCount = subItem.countKey ? counts[subItem.countKey] : undefined;
+                  return (
+                    <div key={subItem.id} className="text-xs text-slate-300">
+                      {subItem.label}
+                      {subItemCount !== undefined && subItemCount > 0 && (
+                        <span className="ml-1 text-orange-300">({isLoading ? '...' : subItemCount})</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
             {/* Tooltip arrow */}
@@ -269,14 +321,7 @@ const DesktopSidebar: React.FC = () => {
 
   const SectionHeader: React.FC<SectionHeaderProps> = ({ title, action = false, isMinimized = false }) => (
     <div className={`flex items-center justify-between mb-3 ${isMinimized ? 'hidden' : ''}`}>
-      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-        {title}
-      </h3>
-      {action && (
-        <button className="p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200">
-          <Plus className="w-3 h-3 text-slate-400 hover:text-white" />
-        </button>
-      )}
+     
     </div>
   );
 
@@ -288,6 +333,7 @@ const DesktopSidebar: React.FC = () => {
       backdrop-blur-xl
       shadow-2xl
       h-screen
+      relative
       ${isOpen ? 'w-72' : 'w-20'}
     `}>
       {/* Toggle button */}
@@ -309,7 +355,7 @@ const DesktopSidebar: React.FC = () => {
         ${isOpen ? 'p-6 overflow-y-auto' : 'p-4 overflow-hidden'}
       `}>
         <div>
-          <SectionHeader title="Main" isMinimized={!isOpen} />
+          <SectionHeader title="Main" action isMinimized={!isOpen} />
           <div className="space-y-2">
             {mainItems.map((item: MenuItem) => (
               <SidebarItem 
@@ -324,6 +370,16 @@ const DesktopSidebar: React.FC = () => {
           </div>
         </div>
       </nav>
+
+      {/* Sticky Refresh Button */}
+      <button 
+        onClick={handleRefreshCounts}
+        disabled={isLoading}
+        className="fixed bottom-[7rem] left-[3rem] z-50 p-2 bg-orange-500 hover:bg-orange-400 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 hover:scale-110"
+        title="Refresh counts"
+      >
+        <RefreshCw className={`w-5 h-5 text-white ${isLoading ? 'animate-spin' : ''}`} />
+      </button>
     </div>
   );
 };

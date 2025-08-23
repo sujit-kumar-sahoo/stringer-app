@@ -33,50 +33,66 @@ export interface FetchActivitiesParams {
   dateTo?: string
   selectedLocations?: string[]
   selectedPriorities?: string[]
+  selectedCreatedBy?: string[] 
+  selectedContentTypes?: string[] 
 }
 
 export const fetchActivities = async (params: FetchActivitiesParams): Promise<ApiResponse> => {
   try {
-    const { page, limit, appliedSearchTerm, dateFrom, dateTo, selectedLocations, selectedPriorities } = params
+    const { 
+      page, 
+      limit, 
+      appliedSearchTerm, 
+      dateFrom, 
+      dateTo, 
+      selectedLocations, 
+      selectedPriorities,
+      selectedCreatedBy,
+      selectedContentTypes
+    } = params
     
     const offset = (page - 1) * limit
-    const queryParams = new URLSearchParams({
-      status: '2',
-      limit: limit.toString(),
-      offset: offset.toString()
-    })
+    
+   
+    const queryParts = [
+      `status=2`,
+      `limit=${limit}`,
+      `offset=${offset}`
+    ]
 
-    // Add search filter if applied
+   
     if (appliedSearchTerm) {
-      queryParams.append('search', appliedSearchTerm)
+      queryParts.push(`headline=${encodeURIComponent(appliedSearchTerm)}`)
     }
 
-    // Add date filters if set
+    
     if (dateFrom) {
-      queryParams.append('date_from', dateFrom)
+      queryParts.push(`from_date=${dateFrom}`)
     }
     if (dateTo) {
-      queryParams.append('date_to', dateTo)
+      queryParts.push(`to_date=${dateTo}`)
     }
 
-    // Add location filter if selected
     if (selectedLocations && selectedLocations.length > 0) {
-      selectedLocations.forEach(location => {
-        queryParams.append('location', location)
-      })
+      queryParts.push(`location=${selectedLocations.join(',')}`)
     }
 
-    // Add priority filter if selected
     if (selectedPriorities && selectedPriorities.length > 0) {
-      selectedPriorities.forEach(priority => {
-        queryParams.append('priority', priority)
-      })
+      queryParts.push(`priority=${selectedPriorities.join(',')}`)
     }
 
-    console.log('API URL:', `/api/content/?${queryParams.toString()}`) // Debug log
+    if (selectedCreatedBy && selectedCreatedBy.length > 0) {
+      queryParts.push(`created_by=${selectedCreatedBy.join(',')}`)
+    }
+
+    if (selectedContentTypes && selectedContentTypes.length > 0) {
+      queryParts.push(`content_type=${selectedContentTypes.join(',')}`)
+    }
+
+    const queryString = queryParts.join('&')
+    console.log('API URL:', `/api/content/?${queryString}`) 
     
-    // Use your api utility
-    const response = await api.get(`/api/content/?${queryParams.toString()}`, {
+    const response = await api.get(`/api/content/?${queryString}`, {
       headers: {
         'Content-Type': 'application/json',
       },

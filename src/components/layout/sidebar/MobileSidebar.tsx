@@ -4,14 +4,16 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  FileText, Plus,
+  FileText, 
   LucideIcon,
   ChevronDown,
   ChevronUp,
   Database,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
 import { useSidebar } from '../../../context/SidebarContext';
+import { useCount } from '../../../context/CountContext';
 
 // Type definitions
 type ColorType = 'blue' | 'emerald' | 'purple' | 'orange' | 'yellow';
@@ -20,7 +22,7 @@ interface SubMenuItem {
   id: string;
   label: string;
   href: string;
-  count?: number;
+  countKey?: keyof import('../../../context/CountContext').CountData;
 }
 
 interface MenuItem {
@@ -31,6 +33,7 @@ interface MenuItem {
   color: ColorType;
   href: string;
   subItems?: SubMenuItem[];
+  countKey?: keyof import('../../../context/CountContext').CountData;
 }
 
 interface SidebarItemProps {
@@ -48,6 +51,7 @@ interface SectionHeaderProps {
 
 const MobileSidebar: React.FC = () => {
   const { isOpen, toggleSidebar } = useSidebar();
+  const { counts, isLoading, refreshCounts } = useCount();
   const pathname = usePathname();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
@@ -71,20 +75,37 @@ const MobileSidebar: React.FC = () => {
       color: 'purple', 
       href: '/input',
       subItems: [
-        { id: 'input-listing', label: 'Wait List', href: '/input/wait-list', count: 24 },
-        { id: 'input-details', label: 'Details', href: '/input/details', count: 24 },
-        { id: 'input-wip', label: 'Input WIP', href: '/input/wip', count: 24 },
-        { id: 'input-to-stringer', label: 'Input to Stringer', href: '/input/to-stringer', count: 24 },
-        { id: 'output-to-input', label: 'Output to Input', href: '/output/to-input', count: 24 },
-        { id: 'published', label: 'Published', href: '/published', count: 24 },
+        { 
+          id: 'input-listing', 
+          label: 'Wait List', 
+          href: '/input/wait-list', 
+          countKey: 'waitList'
+        },
+        { 
+          id: 'input-wip', 
+          label: 'Input WIP', 
+          href: '/input/wip', 
+          countKey: 'inputWip' 
+        },
+        { 
+          id: 'input-to-stringer', 
+          label: 'Input to Stringer', 
+          href: '/input/to-stringer', 
+          countKey: 'inputToStringer' 
+        },
+        { 
+          id: 'output-to-input', 
+          label: 'Output to Input', 
+          href: '/output/to-input', 
+          countKey: 'outputToInput' 
+        },
+        { 
+          id: 'published', 
+          label: 'Published', 
+          href: '/published', 
+          countKey: 'published' 
+        },
       ]
-    },
-    { 
-      id: 'input-activity', 
-      icon: FileText, 
-      label: 'Activity log', 
-      color: 'emerald', 
-      href: '/activity-log',
     },
     { 
       id: 'input-create', 
@@ -92,6 +113,13 @@ const MobileSidebar: React.FC = () => {
       label: 'Create', 
       color: 'emerald', 
       href: '/create',
+    },
+    { 
+      id: 'input-activity', 
+      icon: FileText, 
+      label: 'Activity log', 
+      color: 'emerald', 
+      href: '/activity-log',
     },
   ];
 
@@ -105,6 +133,10 @@ const MobileSidebar: React.FC = () => {
 
   const handleMobileItemClick = () => {
     toggleSidebar();
+  };
+
+  const handleRefreshCounts = async () => {
+    await refreshCounts();
   };
 
   const isSubItemActive = (item: MenuItem): boolean => {
@@ -146,6 +178,16 @@ const MobileSidebar: React.FC = () => {
       }
     };
 
+    // Get the count for this item
+    const getItemCount = () => {
+      if (item.countKey) {
+        return counts[item.countKey];
+      }
+      return item.count;
+    };
+
+    const itemCount = getItemCount();
+
     // Render main item content
     const MainItemContent = () => (
       <div
@@ -164,7 +206,7 @@ const MobileSidebar: React.FC = () => {
         <div className="flex items-center justify-between flex-1">
           <span className="font-semibold text-base">{item.label}</span>
           <div className="flex items-center space-x-3">
-            {item.count && (
+            {itemCount !== undefined && itemCount > 0 && (
               <span className={`
                 px-3 py-1.5 rounded-full text-xs font-bold
                 ${isParentActive 
@@ -172,7 +214,7 @@ const MobileSidebar: React.FC = () => {
                   : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
                 }
               `}>
-                {item.count}
+                {isLoading ? '...' : itemCount}
               </span>
             )}
             {hasSubItems && (
@@ -207,6 +249,8 @@ const MobileSidebar: React.FC = () => {
           <div className="ml-8 mt-2 space-y-1 border-l-2 border-slate-700/50 pl-6">
             {item.subItems?.map((subItem) => {
               const isSubActive = pathname === subItem.href;
+              const subItemCount = subItem.countKey ? counts[subItem.countKey] : undefined;
+
               return (
                 <Link
                   key={subItem.id}
@@ -222,7 +266,7 @@ const MobileSidebar: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span>{subItem.label}</span>
-                    {subItem.count && (
+                    {subItemCount !== undefined && subItemCount > 0 && (
                       <span className={`
                         px-2.5 py-1 rounded-full text-xs font-bold
                         ${isSubActive 
@@ -230,7 +274,7 @@ const MobileSidebar: React.FC = () => {
                           : 'bg-slate-600/50 text-slate-400'
                         }
                       `}>
-                        {subItem.count}
+                        {isLoading ? '...' : subItemCount}
                       </span>
                     )}
                   </div>
@@ -248,11 +292,18 @@ const MobileSidebar: React.FC = () => {
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
         {title}
       </h3>
-      {action && (
-        <button className="p-2 rounded-lg hover:bg-slate-700/50 transition-colors duration-200">
-          <Plus className="w-4 h-4 text-slate-400 hover:text-white" />
+      <div className="flex items-center space-x-1">
+     
+        <button 
+          onClick={handleRefreshCounts}
+          disabled={isLoading}
+          className="p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200 disabled:opacity-50"
+          title="Refresh counts"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-slate-400 hover:text-white ${isLoading ? 'animate-spin' : ''}`} />
         </button>
-      )}
+       
+      </div>
     </div>
   );
 
@@ -271,7 +322,7 @@ const MobileSidebar: React.FC = () => {
 
       {/* Mobile Sidebar */}
       <div className={`
-        fixed top-0 left-0 h-full w-80 z-50
+        fixed top-0 left-0 h-full w-80 z-50 flex flex-col
         bg-gradient-to-b from-slate-800 via-slate-900 to-blue-900
         border-r border-slate-700
         backdrop-blur-xl
@@ -279,8 +330,8 @@ const MobileSidebar: React.FC = () => {
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        {/* Header with close button */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
+        {/* Header with close button - Fixed at top */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-700/50 flex-shrink-0">
           <h2 className="text-xl font-bold text-white">Navigation</h2>
           <button
             onClick={toggleSidebar}
@@ -291,8 +342,8 @@ const MobileSidebar: React.FC = () => {
           </button>
         </div>
         
-        {/* Navigation content */}
-        <nav className="flex-1 p-6 overflow-y-auto">
+        {/* Navigation content - Scrollable */}
+        <nav className="flex-1 p-6 overflow-y-auto overflow-x-hidden">
           <div>
             <SectionHeader title="Main" />
             <div className="space-y-1">

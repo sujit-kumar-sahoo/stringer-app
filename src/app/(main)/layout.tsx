@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { SidebarProvider } from '../../context/SidebarContext';
-
+import { CountProvider } from '../../context/CountContext';
 // Desktop components
 import  DesktopHeader  from '../../components/layout/header/DesktopHeader';
 import DesktopSidebar from '../../components/layout/sidebar/DesktopSidebar';
@@ -49,16 +49,18 @@ export default function MainLayout({
   const MainContent = isMobile ? MobileMainContent : DesktopMainContent;
 
   return (
-    <SidebarProvider>
-      <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
-        <Header />
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar />
-          <MainContent>
-            {children}
-          </MainContent>
+    <CountProvider >  
+      <SidebarProvider>
+        <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
+          <Header />
+          <div className="flex flex-1 overflow-hidden">
+            <Sidebar /> 
+            <MainContent>
+              {children}
+            </MainContent>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </CountProvider> 
   );
 }

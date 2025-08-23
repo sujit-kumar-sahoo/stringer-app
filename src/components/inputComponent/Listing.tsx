@@ -1,13 +1,16 @@
 'use client'
 import withAuth from '@/hoc/withAuth';
+import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown'; 
+import { getPriorities } from '@/services/priorityService';
+import { getLocations } from '@/services/locationService';
+import { useCount } from '@/context/CountContext'; 
 
 import React, { useState, useEffect } from 'react'
-import { ChevronDown, Search, Grid3X3, List, MapPin, Clock, FileText, AlertCircle, Image, Video, Headphones, File, Lock, Calendar, X, Check } from 'lucide-react'
+import { ChevronDown, Search, Grid3X3, List, MapPin, Clock, FileText, AlertCircle, Image, Video, Headphones, File, Lock, Calendar, X} from 'lucide-react'
 import Pagination from '../ui/pagination';
-
-import { fetchActivities, Activity, ApiResponse, FetchActivitiesParams } from '@/services/paginationService';
-
+import { fetchActivities, Activity, FetchActivitiesParams } from '@/services/paginationService';
 const Listing: React.FC = () => {
+  const { updateCount } = useCount();
   const [searchTerm, setSearchTerm] = useState('')
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -16,24 +19,20 @@ const Listing: React.FC = () => {
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
-
-  // API-related state
   const [activities, setActivities] = useState<Activity[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalRecords, setTotalRecords] = useState(0)
   const [limit] = useState(50)
   const [error, setError] = useState<string | null>(null)
-
-  // Dropdown options
-  const locationOptions = ['Bhubaneswar', 'Cuttack', 'Puri', 'Berhampur', 'Rourkela', 'Sambalpur', 'Balasore', 'Angul', 'Bargarh', 'Bhadrak', 'Bolangir', 'Dhenkanal', 'Gajapati', 'Ganjam', 'Jagatsinghpur', 'Jajpur', 'Jharsuguda', 'Kalahandi', 'Kandhamal', 'Kendrapara', 'Kendujhar', 'Khordha', 'Koraput', 'Malkangiri', 'Mayurbhanj', 'Nabarangpur', 'Nayagarh', 'Nuapada', 'Rayagada', 'Subarnapur', 'Sundargarh', 'Pipili', 'Odisha', 'Joisingha', 'Anandpur']
-  const priorityOptions = ['Breaking', 'High', 'Medium', 'Low']
-
+  const [locationOptions, setLocationOptions] = useState<string[]>([])
+  const [priorityOptions, setPriorityOptions] = useState<Array<Record<string, any>>>([])
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true)
+  const [isLoadingPriorities, setIsLoadingPriorities] = useState(true)
   const loadActivities = async (page: number = 1) => {
     try {
       setIsLoading(true)
       setError(null)
-
       const params: FetchActivitiesParams = {
         page,
         limit,
@@ -43,13 +42,15 @@ const Listing: React.FC = () => {
         selectedLocations,
         selectedPriorities
       }
-
       const data = await fetchActivities(params)
-
       setActivities(data.results)
       setTotalRecords(data.total_records)
       setCurrentPage(page)
 
+      if (page === 1) {
+        updateCount('waitList', data.total_records)
+        console.log('Updated waitList count to:', data.total_records)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
       setActivities([])
@@ -58,17 +59,51 @@ const Listing: React.FC = () => {
       setIsLoading(false)
     }
   }
-
-  // Initial load
   useEffect(() => {
     loadActivities(1)
   }, [])
-
   useEffect(() => {
     loadActivities(1)
   }, [appliedSearchTerm, dateFrom, dateTo, selectedLocations, selectedPriorities])
+  const fetchLocations = async () => {
+    try {
+      setIsLoadingLocations(true)
+      const response = await getLocations()
 
+      if (response.success && response.data && Array.isArray(response.data)) {
+        const locations = response.data
+          .filter((item: any) => item.location && typeof item.location === 'string')
+          .map((item: any) => ({ id: item.location.trim(), name: item.location.trim() }))
+        setLocationOptions(locations)
+      } else {
+        console.error('Invalid locations response structure:', response)
+      }
+    } catch (error) {
+      console.error('Error fetching locations:', error)
+    } finally {
+      setIsLoadingLocations(false)
+    }
+  }
+  const fetchPriorities = async () => {
+    try {
+      setIsLoadingPriorities(true)
+      const response = await getPriorities()
+    
+      if (response.success && response.data && Array.isArray(response.data)) {
+        setPriorityOptions(response.data)
+      }
+
+    } catch (error) {
+      console.error('Error fetching priorities:', error)
+    } finally {
+      setIsLoadingPriorities(false)
+    }
+  }
   useEffect(() => {
+    fetchLocations()
+    fetchPriorities()
+  }, [])
+   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!event.target) return
       const target = event.target as Element
@@ -83,7 +118,6 @@ const Listing: React.FC = () => {
   const applySearch = () => {
     setAppliedSearchTerm(searchTerm)
   }
-
   const clearFilters = () => {
     setSearchTerm('')
     setAppliedSearchTerm('')
@@ -92,16 +126,13 @@ const Listing: React.FC = () => {
     setSelectedLocations([])
     setSelectedPriorities([])
   }
-
-  // Multi-select handlers
-  const toggleLocationSelection = (location: string) => {
+   const toggleLocationSelection = (location: string) => {
     setSelectedLocations(prev =>
       prev.includes(location)
         ? prev.filter(l => l !== location)
         : [...prev, location]
     )
   }
-
   const togglePrioritySelection = (priority: string) => {
     setSelectedPriorities(prev =>
       prev.includes(priority)
@@ -109,27 +140,21 @@ const Listing: React.FC = () => {
         : [...prev, priority]
     )
   }
-
   const selectAllLocations = () => {
-    setSelectedLocations(locationOptions)
+    setSelectedLocations(locationOptions.map(loc => loc.id))
   }
-
   const clearAllLocations = () => {
     setSelectedLocations([])
   }
-
-  const selectAllPriorities = () => {
-    setSelectedPriorities(priorityOptions)
+   const selectAllPriorities = () => {
+    setSelectedPriorities(priorityOptions.map(priority => priority.id))
   }
-
   const clearAllPriorities = () => {
     setSelectedPriorities([])
   }
-
   const handlePageChange = (page: number) => {
     loadActivities(page)
   }
-
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return date.toLocaleDateString('en-GB', {
@@ -141,7 +166,6 @@ const Listing: React.FC = () => {
       hour12: true
     })
   }
-
   const calculateWaitingTime = (createdDate: string) => {
     const created = new Date(createdDate)
     const now = new Date()
@@ -209,10 +233,9 @@ const Listing: React.FC = () => {
     }
 
     const fileTypes = attachments.map(att => {
-      return 'document' // placeholder
+      return 'document' 
     })
-
-    return (
+     return (
       <div className="flex items-center" style={{ gap: '-6px' }}>
         {fileTypes.slice(0, 4).map((fileType, index) => (
           <div
@@ -239,92 +262,7 @@ const Listing: React.FC = () => {
       </div>
     )
   }
-
-  const MultiSelectDropdown = ({
-    label,
-    selectedItems,
-    options,
-    onToggleItem,
-    onSelectAll,
-    onClearAll,
-    dropdownKey
-  }: {
-    label: string
-    selectedItems: string[]
-    options: string[]
-    onToggleItem: (item: string) => void
-    onSelectAll: () => void
-    onClearAll: () => void
-    dropdownKey: string
-  }) => (
-    <div className="relative dropdown-container">
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          setOpenDropdown(openDropdown === dropdownKey ? null : dropdownKey)
-        }}
-        className="flex items-center justify-between space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 min-w-[140px] transition-colors"
-      >
-        <span className="truncate">
-          {selectedItems.length === 0
-            ? label
-            : selectedItems.length === 1
-              ? selectedItems[0]
-              : `${selectedItems.length} selected`}
-        </span>
-        <ChevronDown size={16} className={`transition-transform duration-200 ${openDropdown === dropdownKey ? 'rotate-180' : ''}`} />
-      </button>
-
-      {openDropdown === dropdownKey && (
-        <div className="absolute z-30 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-y-auto">
-          <div className="p-2 border-b border-gray-200 bg-gray-50">
-            <div className="flex justify-between">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onSelectAll()
-                }}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Select All
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onClearAll()
-                }}
-                className="text-xs text-gray-600 hover:text-gray-800 font-medium"
-              >
-                Clear All
-              </button>
-            </div>
-          </div>
-
-          {options.map((option) => (
-            <div
-              key={option}
-              onClick={(e) => {
-                e.stopPropagation()
-                onToggleItem(option)
-              }}
-              className={`flex items-center px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer transition-colors ${selectedItems.includes(option) ? 'bg-blue-50' : ''}`}
-            >
-              <div className="flex items-center justify-center w-4 h-4 mr-3">
-                {selectedItems.includes(option) && (
-                  <Check size={14} className="text-blue-600" />
-                )}
-              </div>
-              <span className={`flex-1 ${selectedItems.includes(option) ? 'text-blue-700 font-medium' : 'text-gray-700'}`}>
-                {option}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-
-  const DateRangeSelector = () => (
+    const DateRangeSelector = () => (
     <div className="relative dropdown-container">
       <button
         onClick={(e) => {
@@ -385,7 +323,7 @@ const Listing: React.FC = () => {
     </div>
   )
 
-  if (isLoading) {
+  if (isLoading || isLoadingLocations || isLoadingPriorities) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-7xl mx-auto">
@@ -429,13 +367,14 @@ const Listing: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sticky Header */}
+      
       <div className="sticky top-0 z-20 bg-gray-50 shadow-sm">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="flex flex-col lg:flex-row items-baseline lg:justify-between gap-4">
               <div className="flex flex-wrap gap-3">
                 <DateRangeSelector />
+                
                 <MultiSelectDropdown
                   label="Location"
                   selectedItems={selectedLocations}
@@ -444,8 +383,13 @@ const Listing: React.FC = () => {
                   onSelectAll={selectAllLocations}
                   onClearAll={clearAllLocations}
                   dropdownKey="location"
+                  openDropdown={openDropdown}
+                  setOpenDropdown={setOpenDropdown}
+                  idKey="id"
+                  displayKey="name"
+                  isLoading={isLoadingLocations}
                 />
-                <MultiSelectDropdown
+                 <MultiSelectDropdown
                   label="Priority"
                   selectedItems={selectedPriorities}
                   options={priorityOptions}
@@ -453,6 +397,11 @@ const Listing: React.FC = () => {
                   onSelectAll={selectAllPriorities}
                   onClearAll={clearAllPriorities}
                   dropdownKey="priority"
+                  openDropdown={openDropdown}
+                  setOpenDropdown={setOpenDropdown}
+                  idKey="id"
+                  displayKey="priority"
+                  isLoading={isLoadingPriorities}
                 />
 
                 {(appliedSearchTerm ||
@@ -512,8 +461,7 @@ const Listing: React.FC = () => {
 
                 {totalRecords > 0 && (
                   <div className="flex justify-end mt-2">
-                  <div className="w-80 float-end">
-
+                    <div className="w-80 float-end">
                       <Pagination
                         offset={(currentPage - 1) * limit}
                         totalRecords={totalRecords}
@@ -575,7 +523,6 @@ const Listing: React.FC = () => {
                       style={{
                         backgroundColor: "rgb(236 39 39 / 79%)",
                         color: "#fff",
-
                         paddingTop: "0.35rem",
                         paddingBottom: "0.35rem",
                         paddingLeft: ".45rem",
@@ -585,28 +532,19 @@ const Listing: React.FC = () => {
                         justifyContent: "center",
                         gap: "0.5rem",
                         width: "100%",
-
-                      }}
-                    >
+                      }}>
                       <Lock size={10} />
                       <span
                         style={{
                           fontSize: "0.575rem",
                           lineHeight: "0.76",
                           fontWeight: 500
-                        }}
-                      >
+                        }}>
                         Locked
                       </span>
                     </div>
-
-
-
-
-
                   </div>
                 ) : null}
-
                 <div className={`p-4 pt-4 ${activity.locked ? 'opacity-70' : ''}`}>
                   <div
                     className="flex items-start gap-3 mb-3"
@@ -614,8 +552,7 @@ const Listing: React.FC = () => {
                       display: "flex",
                       justifyContent: "flex-start",
                       alignItems: "center"
-                    }}
-                  >
+                    }}>
                     <div>
                       <Calendar size={14} />
                     </div>
@@ -625,7 +562,6 @@ const Listing: React.FC = () => {
                       </div>
                     </div>
                   </div>
-
                   <h3
                     className="font-semibold text-gray-900 text-base leading-tight"
                     style={{
@@ -633,11 +569,9 @@ const Listing: React.FC = () => {
                       borderBottom: "1px solid #aba7a759",
                       marginBottom: "1px",
                       paddingBottom: "20px"
-                    }}
-                  >
+                    }}>
                     {activity.headline}
                   </h3>
-
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1 text-gray-600">
                       <MapPin size={14} />
@@ -650,16 +584,13 @@ const Listing: React.FC = () => {
                       </div>
                     </div>
                   </div>
-
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-sm text-gray-600">
                       By <span className="font-medium text-gray-900">{activity.created_name}</span>
                     </div>
                   </div>
-
                   <div style={{ display: "flex", alignItems: "center" }}>
                     {renderFileTypeIcons(activity.attachments)}
-
                     <div
                       style={{
                         backgroundColor: "#dc2626",
@@ -675,8 +606,7 @@ const Listing: React.FC = () => {
                         gap: "0.5rem",
                         width: "fit-content",
                         marginLeft: "auto"
-                      }}
-                    >
+                      }}>
                       <Clock size={12} />
                       <span
                         style={{
@@ -688,14 +618,12 @@ const Listing: React.FC = () => {
                         Waiting {waitingTime}
                       </span>
                     </div>
-
                   </div>
                 </div>
               </div>
             )
           })}
         </div>
-
         {activities.length === 0 && !isLoading && (
           <div className="text-center py-20">
             <div className="text-gray-300 mb-6">
@@ -709,5 +637,4 @@ const Listing: React.FC = () => {
     </div>
   )
 }
-
 export default withAuth(Listing);

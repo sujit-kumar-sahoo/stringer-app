@@ -6,6 +6,7 @@ import { getLocations } from '@/services/locationService';
 import { getContentTypes } from '@/services/contentTypeService';
 import { createContent } from '@/services/contentService';
 import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
+import { useCount } from '@/context/CountContext'
 import TagsSearch from "../ui/TagSearchComponent"
 import LocationSearch from "../ui/LocationSearchComponent"
 interface FileWithMeta {
@@ -21,6 +22,7 @@ interface Tag {
 }
 
 function Create() {
+   const { refreshCounts } = useCount();
   // Rich text editor state
   const [editorData, setEditorData] = useState<string>('')
   const [isEditorReady, setIsEditorReady] = useState(false)
@@ -274,6 +276,7 @@ function Create() {
                       editorData;
 
   const handleSubmit = async (action: 'save' | 'draft') => {
+    await refreshCounts()
     const attachment = files
       .filter((f) => f.uploadedUrl)
       .map((f) => ({ url: f.uploadedUrl }));
