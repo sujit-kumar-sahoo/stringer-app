@@ -131,7 +131,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
   return (
     <div className="relative">
       <label className="block text-sm font-medium text-gray-700 mb-2">
-        Location
+        Location<sup className="text-red-500">*</sup>
       </label>
       
       {/* Selected Location Display */}

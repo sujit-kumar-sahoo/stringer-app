@@ -1,5 +1,5 @@
-import api from '../utilis/api';
-import { encodePayload, formDataToObject } from '@/utilis/encodeUtil';
+import api from '../utils/api';
+import { encodePayload, formDataToObject } from '@/utils/encodeUtil';
 
 interface ApiResponse {
   success: boolean;

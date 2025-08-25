@@ -1,4 +1,4 @@
-import api from '../utilis/api';
+import api from '../utils/api';
 
 export interface Activity {
   id: number

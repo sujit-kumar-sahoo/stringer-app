@@ -1,4 +1,4 @@
-import api from '../utilis/api';
+import api from '../utils/api';
 interface ApiResponse {
   success: boolean;
   message?: string;

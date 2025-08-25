@@ -269,6 +269,7 @@ function Create() {
   /*const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAttachments(e.target.files)
   }*/
+  const [loading, setLoading] = useState<null | "save" | "draft">(null);
   const isFormValid = priority &&
                       selectedContentType &&
                       selectedLocation?.name &&
@@ -276,7 +277,8 @@ function Create() {
                       editorData;
 
   const handleSubmit = async (action: 'save' | 'draft') => {
-    await refreshCounts()
+    setLoading(action); // 🔹 Start loader for clicked button
+    
     const attachment = files
       .filter((f) => f.uploadedUrl)
       .map((f) => ({ url: f.uploadedUrl }));
@@ -300,19 +302,22 @@ function Create() {
       const authResult = await createContent(formData);
 
       if (authResult.success) {
+        handleCancel();
+        await refreshCounts();
         // ✅ Update auth context immediately
       } else {
         // setError(authResult?.message || 'Invalid credentials.');
         // setLoading(false);
       }
     } catch (error: any) {
-      // setError(error?.message || 'Login failed. Please try again.');
-      // setLoading(false);
+      console.error(error?.message || "Submit failed.");
+    } finally {
+      setLoading(null); // 🔹 Stop loader after API call
     }
   };
 
   const handleCancel = () => {
-    if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
+    //if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
       setPriority('')
       setSelectedContentType('')
       setTitle('')
@@ -325,7 +330,7 @@ function Create() {
       }
       setIsEmpty(true)
     }
-  }
+  //}
 
   const ToolbarButton: React.FC<{
     onClick: () => void
@@ -504,25 +509,73 @@ function Create() {
                 </button>
                 <button
                   onClick={() => handleSubmit("draft")}
-                  disabled={!isFormValid}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${
-                    isFormValid
+                  disabled={!isFormValid || loading !== null}
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${
+                    isFormValid && !loading
                       ? "bg-green-600 hover:bg-green-700"
                       : "bg-green-400 cursor-not-allowed"
                   }`}
                 >
-                  Draft Story
+                  {loading === "draft" ? (
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      ></path>
+                    </svg>
+                  ) : (
+                    "Draft Story"
+                  )}
                 </button>
+
+                {/* Create Button */}
                 <button
                   onClick={() => handleSubmit("save")}
-                  disabled={!isFormValid}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${
-                    isFormValid
+                  disabled={!isFormValid || loading !== null}
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${
+                    isFormValid && !loading
                       ? "bg-blue-600 hover:bg-blue-700"
                       : "bg-blue-400 cursor-not-allowed"
                   }`}
                 >
-                  Create Story
+                  {loading === "save" ? (
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      ></path>
+                    </svg>
+                  ) : (
+                    "Create Story"
+                  )}
                 </button>
                 
               </div>
@@ -540,7 +593,7 @@ function Create() {
               {/* Priority Dropdown */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Priority
+                  Priority<sup className="text-red-500">*</sup>
                 </label>
                 <select
                   value={priority}
@@ -565,7 +618,7 @@ function Create() {
               {/* Content Type Dropdown */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Content Type
+                  Content Type<sup className="text-red-500">*</sup>
                 </label>
                 <select
                   value={selectedContentType}
@@ -603,7 +656,7 @@ function Create() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Title
+                Title<sup className="text-red-500">*</sup>
               </label>
               <input
                 type="text"
@@ -761,7 +814,7 @@ function Create() {
           {/* Rich Text Editor */}
           <div className="p-6 relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Story Content
+              Story Content<sup className="text-red-500">*</sup>
             </label>
             <div
               ref={editorRef}
