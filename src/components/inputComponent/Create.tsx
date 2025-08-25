@@ -9,6 +9,7 @@ import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
 import { useCount } from '@/context/CountContext'
 import TagsSearch from "../ui/TagSearchComponent"
 import LocationSearch from "../ui/LocationSearchComponent"
+import { showAlert, showConfirmation } from "@/utils/alert";
 interface FileWithMeta {
   file: File;
   previewUrl: string;
@@ -303,6 +304,7 @@ function Create() {
 
       if (authResult.success) {
         handleCancel();
+        showAlert("Success", "Saved successfully!", "success");
         await refreshCounts();
         // ✅ Update auth context immediately
       } else {
