@@ -26,7 +26,7 @@ export interface ActivityDetail {
   content_type: number
   content_type_text: string
   tags?: string
-  activities: Array<{
+  activities?: Array<{
     id: string
     user: string
     user_id: number
@@ -35,7 +35,7 @@ export interface ActivityDetail {
     created_date: string
     avatar?: string
   }>
-  version: number
+  version?: number
   version_history?: Array<{
     version: number
     title: string
@@ -60,10 +60,19 @@ export const fetchActivityDetail = async (id: number): Promise<ActivityDetailRes
       },
     })
     
-    // Return the response data
+    // Map the response data to ensure all fields are properly formatted
+    const mappedData: ActivityDetail = {
+      ...response.data,
+      attachments: response.data.attachments || [],
+      activities: response.data.activities || [],
+      version_history: response.data.version_history || [],
+      tags: response.data.tags || '',
+      version: response.data.version || 1
+    }
+    
     return {
       success: true,
-      data: response.data
+      data: mappedData
     }
     
   } catch (error: any) {
@@ -82,64 +91,3 @@ export const fetchActivityDetail = async (id: number): Promise<ActivityDetailRes
   }
 }
 
-// Optional: Service for updating activity
-export const updateActivity = async (id: number, data: Partial<ActivityDetail>): Promise<ActivityDetailResponse> => {
-  try {
-    console.log('Updating activity:', id, data)
-    
-    const response = await api.put(`/api/content/${id}/`, data, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    return {
-      success: true,
-      data: response.data
-    }
-    
-  } catch (error: any) {
-    const errorMessage = error.response?.data?.detail || 
-                        error.response?.data?.message || 
-                        error.message || 
-                        'Failed to update activity'
-    
-    console.error('Error updating activity:', error)
-    
-    return {
-      success: false,
-      data: {} as ActivityDetail,
-      message: errorMessage
-    }
-  }
-}
-
-// Optional: Service for deleting activity
-export const deleteActivity = async (id: number): Promise<{ success: boolean; message?: string }> => {
-  try {
-    console.log('Deleting activity:', id)
-    
-    await api.delete(`/api/content/${id}/`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    return {
-      success: true
-    }
-    
-  } catch (error: any) {
-    const errorMessage = error.response?.data?.detail || 
-                        error.response?.data?.message || 
-                        error.message || 
-                        'Failed to delete activity'
-    
-    console.error('Error deleting activity:', error)
-    
-    return {
-      success: false,
-      message: errorMessage
-    }
-  }
-}

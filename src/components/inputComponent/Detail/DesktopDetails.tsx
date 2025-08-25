@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
 import { PenTool, User, ChevronDown, FileText, MapPin } from 'lucide-react'
-
+import withAuth from '@/hoc/withAuth';
 
 interface StoryData {
   title: string
@@ -512,4 +512,4 @@ const DesktopStoryDetailView: React.FC = () => {
   )
 }
 
-export default DesktopStoryDetailView
+export default withAuth(DesktopStoryDetailView)

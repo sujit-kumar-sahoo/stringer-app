@@ -1,9 +1,9 @@
-// app/details/page.tsx (or wherever your detail page is located)
+
 'use client'
 
 import { useState, useEffect } from 'react'
-import DesktopDetails from '../../../../components/inputComponent/Detail/DesktopDetails'
-import MobileDetails from '../../../../components/inputComponent/Detail/MobileDetails'
+import DesktopDetails from '../../../../../components/inputComponent/Detail/DesktopDetails'
+import MobileDetails from '../../../../../components/inputComponent/Detail/MobileDetails'
 
 // Custom hook to detect mobile device
 function useIsMobile() {
@@ -31,7 +31,7 @@ function useIsMobile() {
 export default function DetailsPage() {
   const isMobile = useIsMobile()
 
-  // Conditional component selection
+
   const DetailComponent = isMobile ? MobileDetails : DesktopDetails
 
   return <DetailComponent />

@@ -1,7 +1,10 @@
 'use client'
 import withAuth from '@/hoc/withAuth';
+import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown'; 
+import { getPriorities } from '@/services/priorityService';
+import { getLocations } from '@/services/locationService';
 import React, { useState, useEffect } from 'react'
-import { Search,  Calendar, User, FileText, Edit3, Upload, ChevronDown, X } from 'lucide-react'
+import { Search, Calendar, User, FileText, Edit3, Upload, ChevronDown, X, MapPin } from 'lucide-react'
 
 interface Activity {
   id: string
@@ -11,6 +14,8 @@ interface Activity {
   storyTitle: string
   status: 'Input WIP' | 'Waiting in Input' | 'Published' | 'Draft'
   timestamp: string
+  location: string
+  priority: string
   link?: string
 }
 
@@ -19,7 +24,14 @@ const Activity: React.FC = () => {
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([])
+  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([])
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [locationOptions, setLocationOptions] = useState<string[]>([])
+  const [priorityOptions, setPriorityOptions] = useState<Array<Record<string, any>>>([])
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true)
+  const [isLoadingPriorities, setIsLoadingPriorities] = useState(true)
+  
   const [activities, setActivities] = useState<Activity[]>([
     {
       id: '1',
@@ -29,6 +41,8 @@ const Activity: React.FC = () => {
       storyTitle: 'Sujit story title ver 2',
       status: 'Input WIP',
       timestamp: 'Aug 7, 2025, 4:38 PM',
+      location: 'Mumbai',
+      priority: 'High',
       link: '#'
     },
     {
@@ -38,7 +52,9 @@ const Activity: React.FC = () => {
       action: 'uploaded a story',
       storyTitle: 'asd',
       status: 'Waiting in Input',
-      timestamp: 'Aug 7, 2025, 4:20 PM'
+      timestamp: 'Aug 7, 2025, 4:20 PM',
+      location: 'Delhi',
+      priority: 'Medium'
     },
     {
       id: '3',
@@ -48,6 +64,8 @@ const Activity: React.FC = () => {
       storyTitle: 'Sujit story title:',
       status: 'Waiting in Input',
       timestamp: 'Aug 7, 2025, 4:15 PM',
+      location: 'Kolkata',
+      priority: 'Breaking',
       link: '#'
     },
     {
@@ -58,11 +76,54 @@ const Activity: React.FC = () => {
       storyTitle: 'test 19-12-2024',
       status: 'Draft',
       timestamp: 'Aug 7, 2025, 4:10 PM',
+      location: 'Chennai',
+      priority: 'Low',
       link: '#'
     }
   ])
 
   const [isLoading, setIsLoading] = useState(true)
+
+  // Fetch locations and priorities
+  const fetchLocations = async () => {
+    try {
+      setIsLoadingLocations(true)
+      const response = await getLocations()
+
+      if (response.success && response.data && Array.isArray(response.data)) {
+        const locations = response.data
+          .filter((item: any) => item.location && typeof item.location === 'string')
+          .map((item: any) => ({ id: item.location.trim(), name: item.location.trim() }))
+        setLocationOptions(locations)
+      } else {
+        console.error('Invalid locations response structure:', response)
+      }
+    } catch (error) {
+      console.error('Error fetching locations:', error)
+    } finally {
+      setIsLoadingLocations(false)
+    }
+  }
+
+  const fetchPriorities = async () => {
+    try {
+      setIsLoadingPriorities(true)
+      const response = await getPriorities()
+    
+      if (response.success && response.data && Array.isArray(response.data)) {
+        setPriorityOptions(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching priorities:', error)
+    } finally {
+      setIsLoadingPriorities(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchLocations()
+    fetchPriorities()
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -96,11 +157,46 @@ const Activity: React.FC = () => {
     setAppliedSearchTerm('')
     setDateFrom('')
     setDateTo('')
+    setSelectedLocations([])
+    setSelectedPriorities([])
+  }
+
+  // Location and Priority filter functions
+  const toggleLocationSelection = (location: string) => {
+    setSelectedLocations(prev =>
+      prev.includes(location)
+        ? prev.filter(l => l !== location)
+        : [...prev, location]
+    )
+  }
+
+  const togglePrioritySelection = (priority: string) => {
+    setSelectedPriorities(prev =>
+      prev.includes(priority)
+        ? prev.filter(p => p !== priority)
+        : [...prev, priority]
+    )
+  }
+
+  const selectAllLocations = () => {
+    setSelectedLocations(locationOptions.map(loc => loc.id))
+  }
+
+  const clearAllLocations = () => {
+    setSelectedLocations([])
+  }
+
+  const selectAllPriorities = () => {
+    setSelectedPriorities(priorityOptions.map(priority => priority.id))
+  }
+
+  const clearAllPriorities = () => {
+    setSelectedPriorities([])
   }
 
   const getFilteredActivities = () => {
     let filtered = activities.filter(activity => {
-      
+      // Search filter
       const searchMatch = !appliedSearchTerm ||
         activity.storyTitle.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
         activity.user.toLowerCase().includes(appliedSearchTerm.toLowerCase())
@@ -120,7 +216,15 @@ const Activity: React.FC = () => {
         }
       }
 
-      return searchMatch && dateMatch
+      // Location filter
+      const locationMatch = selectedLocations.length === 0 || 
+        selectedLocations.includes(activity.location)
+
+      // Priority filter
+      const priorityMatch = selectedPriorities.length === 0 || 
+        selectedPriorities.includes(activity.priority)
+
+      return searchMatch && dateMatch && locationMatch && priorityMatch
     })
 
     return filtered
@@ -128,7 +232,20 @@ const Activity: React.FC = () => {
 
   const filteredActivities = getFilteredActivities()
 
- 
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'High':
+        return 'text-orange-600'
+      case 'Medium':
+        return 'text-yellow-600'
+      case 'Breaking':
+        return 'text-red-600'
+      case 'Low':
+        return 'text-green-600'
+      default:
+        return 'text-gray-600'
+    }
+  }
 
   const getActivityIcon = (type: string) => {
     if (type === 'edit') {
@@ -156,7 +273,7 @@ const Activity: React.FC = () => {
       >
         <div className="flex items-center space-x-2">
           <Calendar size={16} />
-          <span className="truncate">Date Range</span>
+          <span className="truncate">Date</span>
         </div>
         <ChevronDown size={16} className={`transition-transform duration-200 ${openDropdown === 'dateRange' ? 'rotate-180' : ''}`} />
       </button>
@@ -206,15 +323,15 @@ const Activity: React.FC = () => {
     </div>
   )
 
-  if (isLoading) {
+  if (isLoading || isLoadingLocations || isLoadingPriorities) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
-        <div >
+        <div>
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-64 mb-6"></div>
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <div className="flex space-x-4 mb-6">
-                {[1, 2, 3].map(i => (
+                {[1, 2, 3, 4].map(i => (
                   <div key={i} className="h-10 bg-gray-200 rounded w-32"></div>
                 ))}
               </div>
@@ -232,7 +349,7 @@ const Activity: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sticky Header - Reduced Height */}
+      {/* Sticky Header */}
       <div className="sticky top-0 z-20 bg-gray-50 shadow-sm">
         <div>
           {/* Filters and Controls */}
@@ -241,9 +358,43 @@ const Activity: React.FC = () => {
               {/* Filter Dropdowns */}
               <div className="flex flex-wrap gap-3">
                 <DateRangeSelector />
+                
+                <MultiSelectDropdown
+                  label="Location"
+                  selectedItems={selectedLocations}
+                  options={locationOptions}
+                  onToggleItem={toggleLocationSelection}
+                  onSelectAll={selectAllLocations}
+                  onClearAll={clearAllLocations}
+                  dropdownKey="location"
+                  openDropdown={openDropdown}
+                  setOpenDropdown={setOpenDropdown}
+                  idKey="id"
+                  displayKey="name"
+                  isLoading={isLoadingLocations}
+                />
+                
+                <MultiSelectDropdown
+                  label="Priority"
+                  selectedItems={selectedPriorities}
+                  options={priorityOptions}
+                  onToggleItem={togglePrioritySelection}
+                  onSelectAll={selectAllPriorities}
+                  onClearAll={clearAllPriorities}
+                  dropdownKey="priority"
+                  openDropdown={openDropdown}
+                  setOpenDropdown={setOpenDropdown}
+                  idKey="id"
+                  displayKey="priority"
+                  isLoading={isLoadingPriorities}
+                />
 
                 {/* Clear Filters Button */}
-                {(appliedSearchTerm || dateFrom || dateTo) && (
+                {(appliedSearchTerm || 
+                  dateFrom || 
+                  dateTo || 
+                  selectedLocations.length > 0 || 
+                  selectedPriorities.length > 0) && (
                   <button
                     onClick={clearFilters}
                     className="px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded-2xl hover:bg-red-50 transition-colors bg-red-100"
@@ -283,8 +434,6 @@ const Activity: React.FC = () => {
 
       {/* Content Area */}
       <div className="py-6">
-        
-
         {/* Activities Feed */}
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
           {filteredActivities.length === 0 ? (
@@ -327,10 +476,24 @@ const Activity: React.FC = () => {
                           </span>
                         )}
                       </div>
+
+                      {/* Location and Priority Row */}
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <MapPin size={14} />
+                          <span className="text-sm">{activity.location}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-gray-500">priority</div>
+                          <div className={`text-sm font-semibold ${getPriorityColor(activity.priority)}`}>
+                            {activity.priority}
+                          </div>
+                        </div>
+                      </div>
                       
                       {/* Status and Timestamp */}
                       <div className="flex items-center justify-between">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border {(activity.status)}`}>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border`}>
                           {activity.status}
                         </span>
                         

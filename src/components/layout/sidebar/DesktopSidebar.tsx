@@ -76,14 +76,14 @@ const DesktopSidebar: React.FC = () => {
       icon: Database, 
       label: 'Input', 
       color: 'purple', 
-      href: '/input',
+      href: '',
       
       
       subItems: [
         { 
           id: 'input-listing', 
           label: 'Wait List', 
-          href: '/input/wait-list', 
+          href: '/list/input/wait-list', 
           countKey: 'waitList'
         },
         { 
@@ -93,6 +93,13 @@ const DesktopSidebar: React.FC = () => {
           countKey: 'inputWip' 
         },
         { 
+          id: 'details', 
+          label: 'Details', 
+          href: '/details', 
+          // countKey: 'inputWip' 
+        },
+
+        { 
           id: 'input-to-stringer', 
           label: 'Input to Stringer', 
           href: '/input/to-stringer', 
@@ -101,13 +108,13 @@ const DesktopSidebar: React.FC = () => {
         { 
           id: 'output-to-input', 
           label: 'Output to Input', 
-          href: '/output/to-input', 
+          href: '/input/to-input', 
           countKey: 'outputToInput' 
         },
         { 
           id: 'published', 
           label: 'Published', 
-          href: '/published', 
+          href: '/input/published', 
           countKey: 'published' 
         },
       ]

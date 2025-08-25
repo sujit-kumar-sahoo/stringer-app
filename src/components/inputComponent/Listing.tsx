@@ -4,11 +4,12 @@ import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown';
 import { getPriorities } from '@/services/priorityService';
 import { getLocations } from '@/services/locationService';
 import { useCount } from '@/context/CountContext'; 
-
+import Link from 'next/link'
 import React, { useState, useEffect } from 'react'
 import { ChevronDown, Search, Grid3X3, List, MapPin, Clock, FileText, AlertCircle, Image, Video, Headphones, File, Lock, Calendar, X} from 'lucide-react'
 import Pagination from '../ui/pagination';
 import { fetchActivities, Activity, FetchActivitiesParams } from '@/services/paginationService';
+
 const Listing: React.FC = () => {
   const { updateCount } = useCount();
   const [searchTerm, setSearchTerm] = useState('')
@@ -29,6 +30,7 @@ const Listing: React.FC = () => {
   const [priorityOptions, setPriorityOptions] = useState<Array<Record<string, any>>>([])
   const [isLoadingLocations, setIsLoadingLocations] = useState(true)
   const [isLoadingPriorities, setIsLoadingPriorities] = useState(true)
+
   const loadActivities = async (page: number = 1) => {
     try {
       setIsLoading(true)
@@ -59,12 +61,15 @@ const Listing: React.FC = () => {
       setIsLoading(false)
     }
   }
+  
   useEffect(() => {
     loadActivities(1)
   }, [])
+  
   useEffect(() => {
     loadActivities(1)
   }, [appliedSearchTerm, dateFrom, dateTo, selectedLocations, selectedPriorities])
+  
   const fetchLocations = async () => {
     try {
       setIsLoadingLocations(true)
@@ -84,6 +89,7 @@ const Listing: React.FC = () => {
       setIsLoadingLocations(false)
     }
   }
+  
   const fetchPriorities = async () => {
     try {
       setIsLoadingPriorities(true)
@@ -99,10 +105,12 @@ const Listing: React.FC = () => {
       setIsLoadingPriorities(false)
     }
   }
+  
   useEffect(() => {
     fetchLocations()
     fetchPriorities()
   }, [])
+  
    useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!event.target) return
@@ -118,6 +126,7 @@ const Listing: React.FC = () => {
   const applySearch = () => {
     setAppliedSearchTerm(searchTerm)
   }
+  
   const clearFilters = () => {
     setSearchTerm('')
     setAppliedSearchTerm('')
@@ -126,6 +135,7 @@ const Listing: React.FC = () => {
     setSelectedLocations([])
     setSelectedPriorities([])
   }
+  
    const toggleLocationSelection = (location: string) => {
     setSelectedLocations(prev =>
       prev.includes(location)
@@ -133,6 +143,7 @@ const Listing: React.FC = () => {
         : [...prev, location]
     )
   }
+  
   const togglePrioritySelection = (priority: string) => {
     setSelectedPriorities(prev =>
       prev.includes(priority)
@@ -140,21 +151,27 @@ const Listing: React.FC = () => {
         : [...prev, priority]
     )
   }
+  
   const selectAllLocations = () => {
     setSelectedLocations(locationOptions.map(loc => loc.id))
   }
+  
   const clearAllLocations = () => {
     setSelectedLocations([])
   }
+  
    const selectAllPriorities = () => {
     setSelectedPriorities(priorityOptions.map(priority => priority.id))
   }
+  
   const clearAllPriorities = () => {
     setSelectedPriorities([])
   }
+  
   const handlePageChange = (page: number) => {
     loadActivities(page)
   }
+  
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return date.toLocaleDateString('en-GB', {
@@ -166,6 +183,7 @@ const Listing: React.FC = () => {
       hour12: true
     })
   }
+  
   const calculateWaitingTime = (createdDate: string) => {
     const created = new Date(createdDate)
     const now = new Date()
@@ -262,6 +280,7 @@ const Listing: React.FC = () => {
       </div>
     )
   }
+  
     const DateRangeSelector = () => (
     <div className="relative dropdown-container">
       <button
@@ -484,17 +503,8 @@ const Listing: React.FC = () => {
           {activities.map((activity) => {
             const waitingTime = calculateWaitingTime(activity.created_date)
 
-            return (
-              <div
-                key={activity.id}
-                className={`bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-all duration-200 cursor-pointer overflow-hidden relative ${activity.locked ? 'bg-gray-100' : ''}`}
-                onClick={() => {
-                  if (!activity.locked) {
-
-                  }
-                }}
-              >
-
+            const cardContent = (
+              <>
                 {activity.status_text && activity.status_text.trim() !== '' ? (
                   <div className="relative">
                     <div
@@ -545,6 +555,7 @@ const Listing: React.FC = () => {
                     </div>
                   </div>
                 ) : null}
+                
                 <div className={`p-4 pt-4 ${activity.locked ? 'opacity-70' : ''}`}>
                   <div
                     className="flex items-start gap-3 mb-3"
@@ -620,10 +631,27 @@ const Listing: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              </>
+            )
+
+            return (
+              <div key={activity.id}>
+                {activity.locked ? (
+                  <div className={`bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-all duration-200 overflow-hidden relative bg-gray-100`}>
+                    {cardContent}
+                  </div>
+                ) : (
+                  <Link href={`/details/${activity.id}`}>
+                    <div className={`bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-all duration-200 cursor-pointer overflow-hidden relative`}>
+                      {cardContent}
+                    </div>
+                  </Link>
+                )}
               </div>
             )
           })}
         </div>
+        
         {activities.length === 0 && !isLoading && (
           <div className="text-center py-20">
             <div className="text-gray-300 mb-6">
@@ -637,4 +665,5 @@ const Listing: React.FC = () => {
     </div>
   )
 }
+
 export default withAuth(Listing);
