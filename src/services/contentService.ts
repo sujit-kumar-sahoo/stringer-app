@@ -55,3 +55,23 @@ export const createContent = async (formData: any): Promise<ApiResponse> => {
     };
   }
 };
+
+export const getContentById = async (id:any): Promise<ApiResponse> => {
+  try {
+    const response = await api.get(`/api/content/${id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || error.response?.data?.message || 'Error fetching locations.',
+    };
+  }
+};

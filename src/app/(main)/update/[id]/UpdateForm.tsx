@@ -4,12 +4,14 @@ import React, { useState, useRef, useEffect } from 'react'
 import { getPriorities } from '@/services/priorityService';
 import { getLocations } from '@/services/locationService';
 import { getContentTypes } from '@/services/contentTypeService';
-import { createContent } from '@/services/contentService';
+import { createContent, getContentById } from '@/services/contentService';
 import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
 import { useCount } from '@/context/CountContext'
-import TagsSearch from "../ui/TagSearchComponent"
-import LocationSearch from "../ui/LocationSearchComponent"
+import TagsSearch from "@/components/ui/TagSearchComponent"
+import LocationSearch from "@/components/ui/LocationSearchComponent"
 import { showAlert, showConfirmation } from "@/utils/alert";
+import { useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 interface FileWithMeta {
   file: File;
   previewUrl: string;
@@ -22,15 +24,23 @@ interface Tag {
   name: string;
 }
 
-function Create() {
-   const { refreshCounts } = useCount();
-  // Rich text editor state
+interface Attachment {
+  path: string;
+  mime: string;
+}
+
+
+function UpdateForm() {
+  const { id } = useParams() || {};
+  const { refreshCounts } = useCount();
+  // text editor state
   const [editorData, setEditorData] = useState<string>('')
   const [isEditorReady, setIsEditorReady] = useState(false)
   const editorRef = useRef<HTMLDivElement>(null)
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set())
   const [isEmpty, setIsEmpty] = useState(true)
   const isUpdatingRef = useRef(false)
+  //text editor end
 
   // Form fields state
   const [priority, setPriority] = useState('')
@@ -82,6 +92,12 @@ function Create() {
     }
   }, [])
 
+  useEffect(() => {
+  if (editorRef.current && editorData) {
+    editorRef.current.innerHTML = editorData
+    setIsEmpty(editorRef.current.textContent?.trim().length === 0)
+  }
+}, [])
 
   useEffect(() => {
     const fetchPriorities = async () => {
@@ -154,11 +170,41 @@ function Create() {
       }
     }
 
+    const fetchContentById = async () => {
+      try {
+        setIsLoadingPriorities(true)
+        const response = await getContentById(id)
+          setPriority(response.data.priority)
+          setSelectedContentType(response.data.content_type)
+          setTitle(response.data.headline)
+          setSelectedLocation({id: "3", name: response.data.location })
+          setEditorData(response.data.description)
+          setSelectedTag(response.data.tags[0])
+          //setFiles([])
+          setExistingFiles(response.data.attachments);
+          console.log("=========response.data=========");
+          console.log(response.data.attachments);
+          console.log("=========response.data=========");
+          // instead of relying on useEffect, inject here:
+          if (editorRef.current) {
+            editorRef.current.innerHTML = response.data.description || ''
+          }
+      
+      } catch (error) {
+        console.error('Error fetching priorities:', error)
+      } finally {
+        setIsLoadingPriorities(false)
+      }
+      
+    }
+
     fetchPriorities()
     fetchLocations()
     fetchContentTypes()
+    fetchContentById()
   }, [])
 
+  //text editor start
   const updateActiveFormats = () => {
     const formats = new Set<string>()
 
@@ -170,6 +216,7 @@ function Create() {
 
     setActiveFormats(formats)
   }
+  
 
   const saveSelection = () => {
     const selection = window.getSelection()
@@ -218,7 +265,16 @@ function Create() {
     selection.addRange(range)
   }
 
-  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+  const handleInput = () => {
+    if (editorRef.current) {
+      const newContent = editorRef.current.innerHTML
+      const textContent = editorRef.current.textContent || ''
+      setEditorData(newContent)
+      setIsEmpty(textContent.trim().length === 0)
+    }
+  }
+
+  /*const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     if (editorRef.current && !isUpdatingRef.current) {
       const newContent = editorRef.current.innerHTML
       const textContent = editorRef.current.textContent || ''
@@ -226,7 +282,7 @@ function Create() {
       setIsEmpty(textContent.trim().length === 0)
       setEditorData(newContent)
     }
-  }
+  }*/
 
 
 
@@ -266,6 +322,9 @@ function Create() {
       formatText('insertImage', url)
     }
   }
+  //text editor end
+
+
 
   /*const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAttachments(e.target.files)
@@ -355,6 +414,7 @@ function Create() {
 
 
   //===================file upload start===============//
+  const [existingFiles, setExistingFiles] = useState<Attachment[]>([]);
   const [files, setFiles] = useState<FileWithMeta[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -498,7 +558,7 @@ function Create() {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Title */}
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">Add Story</h1>
+                <h1 className="text-lg font-semibold text-gray-900">Update Story</h1>
               </div>
 
               {/* Action Buttons */}
@@ -669,7 +729,7 @@ function Create() {
               />
             </div>
           </div>
-
+          {/* text editor start */}
           {/* Rich Text Editor Toolbar */}
           <div className="p-3 border-b border-gray-200 bg-gray-50">
             <div className="flex flex-wrap items-center gap-1">
@@ -834,7 +894,7 @@ function Create() {
               }}
             />
           </div>
-
+           {/* text editor end */}    
           {/* Additional Fields */}
           <div className="p-6 border-t border-gray-200">
             {/* Search & Tags */}
@@ -873,6 +933,63 @@ function Create() {
                 {/* RIGHT: File list & progress */}
                 <div className="flex flex-col gap-4 overflow-y-auto max-h-96">
                   <div className="max-h-54 overflow-y-auto pr-2 space-y-4">
+                    
+                    {existingFiles.map((ef, eidx) => (
+                      <div key={eidx} className="relative flex items-center gap-4">
+                        
+                        {ef?.mime.startsWith('image') ? (
+                          <img
+                            src={`${process.env.NEXT_PUBLIC_CDN_URL}/${ef.path}`}
+                            alt="preview"
+                            className="h-16 w-16 rounded object-cover border border-gray-300"
+                          />
+                        ) : ef.mime.startsWith('video') ? (
+                          <video
+                            src={`${process.env.NEXT_PUBLIC_CDN_URL}/${ef.path}`}
+                            className="h-16 w-16 rounded border border-gray-300"
+                            muted
+                            loop
+                          />
+                        ) : ef.mime.startsWith('audio') ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            className="bi bi-file-earmark-music-fill h-12 w-12 "
+                            viewBox="0 0 16 16"
+                          >
+                            <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M11 6.64v1.75l-2 .5v3.61c0 .495-.301.883-.662 1.123C7.974 13.866 7.499 14 7 14s-.974-.134-1.338-.377C5.302 13.383 5 12.995 5 12.5s.301-.883.662-1.123C6.026 11.134 6.501 11 7 11c.356 0 .7.068 1 .196V6.89a1 1 0 0 1 .757-.97l1-.25A1 1 0 0 1 11 6.64" />
+                          </svg>
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            className="bi bi-file-text h-12 w-12 "
+                            viewBox="0 0 16 16"
+                          >
+                            <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5M5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1z" />
+                            <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1" />
+                          </svg>
+                        )}
+
+                        <div className="flex-1">
+                          <p className="text-sm font-medium truncate">{ef.path}</p>
+                          <a
+                              href={`${process.env.NEXT_PUBLIC_CDN_URL}/${ef.path}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-green-600"
+                            >
+                              View uploaded file
+                          </a>
+
+                        </div>
+                        
+                      </div>
+                    ))}
                     {files.map((f, idx) => (
                       <div key={idx} className="relative flex items-center gap-4">
                         {/* ❌ Remove Button */}
@@ -969,4 +1086,4 @@ function Create() {
   )
 }
 
-export default withAuth(Create)
+export default withAuth(UpdateForm)
