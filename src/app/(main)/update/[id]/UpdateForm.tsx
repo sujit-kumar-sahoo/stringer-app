@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { getPriorities } from '@/services/priorityService';
 import { getLocations } from '@/services/locationService';
 import { getContentTypes } from '@/services/contentTypeService';
-import { createContent, getContentById } from '@/services/contentService';
+import { updateContent, getContentById } from '@/services/contentService';
 import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
 import { useCount } from '@/context/CountContext'
 import TagsSearch from "@/components/ui/TagSearchComponent"
@@ -359,12 +359,12 @@ function UpdateForm() {
         status,
       };
 
-      const authResult = await createContent(formData);
+      const authResult = await updateContent(formData, id);
 
       if (authResult.success) {
-        handleCancel();
-        showAlert("Success", "Saved successfully!", "success");
-        await refreshCounts();
+        //handleCancel();
+        showAlert("Success", "Update successfully!", "success");
+        //await refreshCounts();
         // ✅ Update auth context immediately
       } else {
         // setError(authResult?.message || 'Invalid credentials.');

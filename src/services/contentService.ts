@@ -75,3 +75,32 @@ export const getContentById = async (id:any): Promise<ApiResponse> => {
     };
   }
 };
+
+export const updateContent = async (formData: any, id: any): Promise<ApiResponse> => {
+  try {
+    // Convert FormData → object
+    //const payloadObj = formDataToObject(formData);
+    // Encode object into Base64 JSON
+    //const encodedPayload = encodePayload(payloadObj);
+
+    const response = await api.put(
+                                      `/api/content/${id}`, 
+                                      formData, 
+                                      {
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                        },
+                                      }
+                                    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || 'Error signing in.',
+    };
+  }
+};
