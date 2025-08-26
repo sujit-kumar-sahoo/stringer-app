@@ -62,9 +62,7 @@ const Listing: React.FC = () => {
     }
   }
   
-  useEffect(() => {
-    loadActivities(1)
-  }, [])
+  
   
   useEffect(() => {
     loadActivities(1)
