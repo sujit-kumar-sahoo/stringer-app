@@ -92,12 +92,7 @@ const DesktopSidebar: React.FC = () => {
           href: '/input/wip', 
           countKey: 'inputWip' 
         },
-        { 
-          id: 'details', 
-          label: 'Details', 
-          href: '/details', 
-          // countKey: 'inputWip' 
-        },
+        
 
         { 
           id: 'input-to-stringer', 

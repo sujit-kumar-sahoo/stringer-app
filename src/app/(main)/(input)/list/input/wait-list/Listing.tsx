@@ -1,13 +1,13 @@
 'use client'
 import withAuth from '@/hoc/withAuth';
-import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown'; 
+import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown';
 import { getPriorities } from '@/services/priorityService';
 import { getLocations } from '@/services/locationService';
-import { useCount } from '@/context/CountContext'; 
+import { useCount } from '@/context/CountContext';
 import Link from 'next/link'
 import React, { useState, useEffect } from 'react'
-import { ChevronDown, Search, Grid3X3, List, MapPin, Clock, FileText, AlertCircle, Image, Video, Headphones, File, Lock, Calendar, X} from 'lucide-react'
-import Pagination from '../ui/pagination';
+import { ChevronDown, Search, Grid3X3, List, MapPin, Clock, FileText, AlertCircle, Image, Video, Headphones, File, Lock, Calendar, X } from 'lucide-react'
+import Pagination from '../../../../../../components/ui/pagination';
 import { fetchActivities, Activity, FetchActivitiesParams } from '@/services/paginationService';
 
 const Listing: React.FC = () => {
@@ -61,13 +61,20 @@ const Listing: React.FC = () => {
       setIsLoading(false)
     }
   }
-  
-  
-  
-  useEffect(() => {
-    loadActivities(1)
-  }, [appliedSearchTerm, dateFrom, dateTo, selectedLocations, selectedPriorities])
-  
+
+
+
+  const hasActiveFilters = () => {
+    return !!(
+      searchTerm.trim() ||
+      dateFrom ||
+      dateTo ||
+      selectedLocations.length > 0 ||
+      selectedPriorities.length > 0
+    )
+  }
+
+
   const fetchLocations = async () => {
     try {
       setIsLoadingLocations(true)
@@ -87,12 +94,12 @@ const Listing: React.FC = () => {
       setIsLoadingLocations(false)
     }
   }
-  
+
   const fetchPriorities = async () => {
     try {
       setIsLoadingPriorities(true)
       const response = await getPriorities()
-    
+
       if (response.success && response.data && Array.isArray(response.data)) {
         setPriorityOptions(response.data)
       }
@@ -103,13 +110,17 @@ const Listing: React.FC = () => {
       setIsLoadingPriorities(false)
     }
   }
-  
+
+  useEffect(() => {
+    loadActivities(1)
+  }, [])
+
   useEffect(() => {
     fetchLocations()
     fetchPriorities()
   }, [])
-  
-   useEffect(() => {
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!event.target) return
       const target = event.target as Element
@@ -123,25 +134,53 @@ const Listing: React.FC = () => {
 
   const applySearch = () => {
     setAppliedSearchTerm(searchTerm)
+    loadActivities(1)
   }
-  
-  const clearFilters = () => {
+
+  const clearFilters = async () => {
     setSearchTerm('')
     setAppliedSearchTerm('')
     setDateFrom('')
     setDateTo('')
     setSelectedLocations([])
     setSelectedPriorities([])
+
+
+    try {
+      setIsLoading(true)
+      setError(null)
+      const params: FetchActivitiesParams = {
+        page: 1,
+        limit,
+        appliedSearchTerm: '',
+        dateFrom: '',
+        dateTo: '',
+        selectedLocations: [],
+        selectedPriorities: []
+      }
+      const data = await fetchActivities(params)
+      setActivities(data.results)
+      setTotalRecords(data.total_records)
+      setCurrentPage(1)
+      updateCount('waitList', data.total_records)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+      setActivities([])
+      setTotalRecords(0)
+    } finally {
+      setIsLoading(false)
+    }
   }
-  
-   const toggleLocationSelection = (location: string) => {
+
+
+  const toggleLocationSelection = (location: string) => {
     setSelectedLocations(prev =>
       prev.includes(location)
         ? prev.filter(l => l !== location)
         : [...prev, location]
     )
   }
-  
+
   const togglePrioritySelection = (priority: string) => {
     setSelectedPriorities(prev =>
       prev.includes(priority)
@@ -149,27 +188,27 @@ const Listing: React.FC = () => {
         : [...prev, priority]
     )
   }
-  
+
   const selectAllLocations = () => {
     setSelectedLocations(locationOptions.map(loc => loc.id))
   }
-  
+
   const clearAllLocations = () => {
     setSelectedLocations([])
   }
-  
-   const selectAllPriorities = () => {
+
+  const selectAllPriorities = () => {
     setSelectedPriorities(priorityOptions.map(priority => priority.id))
   }
-  
+
   const clearAllPriorities = () => {
     setSelectedPriorities([])
   }
-  
+
   const handlePageChange = (page: number) => {
     loadActivities(page)
   }
-  
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return date.toLocaleDateString('en-GB', {
@@ -181,7 +220,7 @@ const Listing: React.FC = () => {
       hour12: true
     })
   }
-  
+
   const calculateWaitingTime = (createdDate: string) => {
     const created = new Date(createdDate)
     const now = new Date()
@@ -247,11 +286,16 @@ const Listing: React.FC = () => {
     if (!attachments || attachments.length === 0) {
       return null
     }
+    const fileTypes = [...new Set(attachments.map(att => {
+      const mime = att.mime?.toLowerCase() || ''
 
-    const fileTypes = attachments.map(att => {
-      return 'document' 
-    })
-     return (
+      if (mime.startsWith('image/')) return 'image'
+      if (mime.startsWith('video/')) return 'video'
+      if (mime.startsWith('audio/')) return 'audio'
+      if (mime === 'application/pdf') return 'pdf'
+      return 'document'
+    }))]
+    return (
       <div className="flex items-center" style={{ gap: '-6px' }}>
         {fileTypes.slice(0, 4).map((fileType, index) => (
           <div
@@ -278,8 +322,8 @@ const Listing: React.FC = () => {
       </div>
     )
   }
-  
-    const DateRangeSelector = () => (
+
+  const DateRangeSelector = () => (
     <div className="relative dropdown-container">
       <button
         onClick={(e) => {
@@ -328,8 +372,17 @@ const Listing: React.FC = () => {
                 Clear
               </button>
               <button
-                onClick={() => setOpenDropdown(null)}
-                className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                onClick={() => {
+                  setOpenDropdown(null)
+                  if (dateFrom || dateTo) {
+                    loadActivities(1)
+                  }
+                }}
+                disabled={!dateFrom && !dateTo}
+                className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors ${dateFrom || dateTo
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
               >
                 Apply
               </button>
@@ -384,14 +437,14 @@ const Listing: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      
+
       <div className="sticky top-0 z-20 bg-gray-50 shadow-sm">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="flex flex-col lg:flex-row items-baseline lg:justify-between gap-4">
               <div className="flex flex-wrap gap-3">
                 <DateRangeSelector />
-                
+
                 <MultiSelectDropdown
                   label="Location"
                   selectedItems={selectedLocations}
@@ -406,7 +459,7 @@ const Listing: React.FC = () => {
                   displayKey="name"
                   isLoading={isLoadingLocations}
                 />
-                 <MultiSelectDropdown
+                <MultiSelectDropdown
                   label="Priority"
                   selectedItems={selectedPriorities}
                   options={priorityOptions}
@@ -421,7 +474,8 @@ const Listing: React.FC = () => {
                   isLoading={isLoadingPriorities}
                 />
 
-                {(appliedSearchTerm ||
+                {(searchTerm.trim() ||
+                  appliedSearchTerm ||
                   dateFrom ||
                   dateTo ||
                   selectedLocations.length > 0 ||
@@ -447,14 +501,18 @@ const Listing: React.FC = () => {
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && applySearch()}
+                        onKeyPress={(e) => e.key === 'Enter' && hasActiveFilters() && applySearch()}
                         placeholder="Search stories..."
                         className="pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-64 bg-white"
                       />
                     </div>
                     <button
                       onClick={applySearch}
-                      className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      disabled={!hasActiveFilters()}
+                      className={`px-4 py-2.5 rounded-lg transition-colors text-sm font-medium ${hasActiveFilters()
+                          ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
                     >
                       Apply
                     </button>
@@ -553,7 +611,7 @@ const Listing: React.FC = () => {
                     </div>
                   </div>
                 ) : null}
-                
+
                 <div className={`p-4 pt-4 ${activity.locked ? 'opacity-70' : ''}`}>
                   <div
                     className="flex items-start gap-3 mb-3"
@@ -649,7 +707,7 @@ const Listing: React.FC = () => {
             )
           })}
         </div>
-        
+
         {activities.length === 0 && !isLoading && (
           <div className="text-center py-20">
             <div className="text-gray-300 mb-6">

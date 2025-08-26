@@ -6,6 +6,14 @@ import { getContentById, getContentByVersionId } from '@/services/contentService
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
+interface StoryData {
+  activities: Array<{
+    id: string
+    user: string
+    action: string
+    avatar: string
+  }>
+}
 
 interface Location {
   id: string
@@ -23,7 +31,34 @@ const DesktopStoryDetailView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'attachments' | 'activities'>('overview')
 
   const [showVersionDropdown, setShowVersionDropdown] = useState(false)
-
+  const [activities, setActivities] = useState<StoryData>({
+    activities: [
+      {
+        id: '1',
+        user: 'You',
+        action: 'updated story to version 3',
+        avatar: 'Y'
+      },
+      {
+        id: '2',
+        user: 'Editor',
+        action: 'reviewed and provided feedback',
+        avatar: 'E'
+      },
+      {
+        id: '3',
+        user: 'You',
+        action: 'updated story to version 2',
+        avatar: 'Y'
+      },
+      {
+        id: '4',
+        user: 'You',
+        action: 'created story',
+        avatar: 'Y'
+      }
+    ]
+  })
   // Refs for scrolling
   const overviewRef = useRef<HTMLDivElement>(null)
   const attachmentsRef = useRef<HTMLDivElement>(null)
@@ -118,7 +153,6 @@ const DesktopStoryDetailView: React.FC = () => {
   const isImage = (mime: string) => {
     return mime.startsWith('image/')
   }
-
 
   const isVideo = (mime: string) => {
     return mime.startsWith('video/')
@@ -236,9 +270,6 @@ const DesktopStoryDetailView: React.FC = () => {
       })
     }
   }
-
-
-
 
   const handleReturnToReporter = () => {
     alert('Returning to reporter...')
@@ -383,6 +414,15 @@ const DesktopStoryDetailView: React.FC = () => {
                 >
                   Attachments ({attachments?.length ?? 0})
                 </button>
+                 <button
+                onClick={() => scrollToSection('activities')}
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'activities'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+              >
+                Activities ({attachments?.length ?? 0})
+              </button>
               </nav>
 
               <div className="flex items-center space-x-2 pl-4">
@@ -508,6 +548,33 @@ const DesktopStoryDetailView: React.FC = () => {
                   No attachments yet
                 </div>
               )}
+            </div>
+          </div>
+          {/* Activities Section */}
+          <div ref={activitiesRef} data-section="activities" className="bg-white shadow-sm border border-gray-200 scroll-mt-40 mb-4 rounded-lg">
+            <div className="p-4">
+              <h2 className="text-lg font-semibold text-gray-800 mb-6 border-b border-gray-200 pb-2 flex items-center">
+                <span className="mr-2">📈</span>
+                Activities ({activities.activities.length})
+              </h2>
+              <div className="space-y-4 pb-10">
+                {activities.activities.map((activity) => (
+                  <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                      {activity.avatar}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-gray-900">
+                        <span className="font-medium">{activity.user}</span>
+                        <span className="text-gray-600 ml-1">{activity.action}</span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Just now
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

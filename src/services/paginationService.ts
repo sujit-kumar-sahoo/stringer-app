@@ -98,7 +98,7 @@ export const fetchActivities = async (params: FetchActivitiesParams): Promise<Ap
       },
     })
     
-    // Return the response data
+   
     return response.data
     
   } catch (error: any) {

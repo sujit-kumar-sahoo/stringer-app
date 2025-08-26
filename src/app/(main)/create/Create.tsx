@@ -7,8 +7,8 @@ import { getContentTypes } from '@/services/contentTypeService';
 import { createContent } from '@/services/contentService';
 import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
 import { useCount } from '@/context/CountContext'
-import TagsSearch from "../ui/TagSearchComponent"
-import LocationSearch from "../ui/LocationSearchComponent"
+import TagsSearch from "../../../components/ui/TagSearchComponent"
+import LocationSearch from "../../../components/ui/LocationSearchComponent"
 import { showAlert, showConfirmation } from "@/utils/alert";
 interface FileWithMeta {
   file: File;

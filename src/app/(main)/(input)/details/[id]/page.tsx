@@ -2,8 +2,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import DesktopDetails from '../../../../../components/inputComponent/Detail/DesktopDetails'
-import MobileDetails from '../../../../../components/inputComponent/Detail/MobileDetails'
+import DesktopDetails from './DesktopDetails'
+import MobileDetails from './MobileDetails'
 
 // Custom hook to detect mobile device
 function useIsMobile() {

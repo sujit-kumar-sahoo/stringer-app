@@ -1,4 +1,4 @@
-import EditorComponent from '../../../components/inputComponent/Create'; 
+import EditorComponent from './Create'; 
 
 export default function EditorPage() {
   return <EditorComponent />;
