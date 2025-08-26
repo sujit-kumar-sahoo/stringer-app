@@ -569,7 +569,7 @@ function UpdateForm() {
                 >
                   Cancel
                 </button>
-                <button
+                {/*<button
                   onClick={() => handleSubmit("draft")}
                   disabled={!isFormValid || loading !== null}
                   className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${
@@ -602,7 +602,7 @@ function UpdateForm() {
                   ) : (
                     "Draft Story"
                   )}
-                </button>
+                </button>*/}
 
                 {/* Create Button */}
                 <button
@@ -636,7 +636,7 @@ function UpdateForm() {
                       ></path>
                     </svg>
                   ) : (
-                    "Create Story"
+                    "Update Story"
                   )}
                 </button>
                 

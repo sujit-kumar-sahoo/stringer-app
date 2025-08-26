@@ -66,9 +66,9 @@ const DesktopSidebar: React.FC = () => {
       color: 'emerald', 
       href: '/dashboard',
       subItems: [
-        { id: 'dashboard-you', label: 'You', href: '/dashboard/you' },
-        { id: 'dashboard-we', label: 'We', href: '/dashboard/we' },
-        { id: 'dashboard-our', label: 'Our', href: '/dashboard/our' },
+        { id: 'dashboard-input', label: 'Input', href: '/dashboard/input' },
+        { id: 'dashboard-output', label: 'Output', href: '/dashboard/output' },
+        { id: 'dashboard-stringer', label: 'Stringer', href: '/dashboard/stringer' },
       ]
     },
     { 
