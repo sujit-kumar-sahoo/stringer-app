@@ -86,17 +86,17 @@ const Pagination: React.FC<PaginationProps> = ({
   const visiblePages = getVisiblePages();
 
   const handlePrevious = () => {
-    console.log('Previous clicked, current page:', currentPage); // Debug log
+    console.log('Previous clicked, current page:', currentPage); 
     if (currentPage > 1) {
-      console.log('Calling onPageChange with:', currentPage - 1); // Debug log
+      console.log('Calling onPageChange with:', currentPage - 1); 
       onPageChange(currentPage - 1);
     }
   };
 
   const handleNext = () => {
-    console.log('Next clicked, current page:', currentPage, 'total pages:', totalPages); // Debug log
+    console.log('Next clicked, current page:', currentPage, 'total pages:', totalPages); 
     if (currentPage < totalPages) {
-      console.log('Calling onPageChange with:', currentPage + 1); // Debug log
+      console.log('Calling onPageChange with:', currentPage + 1); 
       onPageChange(currentPage + 1);
     }
   };
@@ -108,9 +108,7 @@ const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center space-y-2 border border-gray-200  rounded-md"
-    
-    >
+    <div className="border border-red-500  rounded-2xl shadow-lg">
       
       {/* Pagination controls */}
       <div className={`inline-flex items-center bg-white rounded-full shadow-sm px-1 py-1 ${className}`}>
@@ -121,7 +119,7 @@ const Pagination: React.FC<PaginationProps> = ({
           className={`px-2 py-1 text-xs font-medium rounded-full transition-colors duration-200 ${
             currentPage === 1
               ? 'text-gray-400 cursor-not-allowed'
-              : 'text-teal-500 hover:bg-teal-50'
+              : 'text-red-500 hover:bg-red-50'
           }`}
         >
           Prev
@@ -137,8 +135,8 @@ const Pagination: React.FC<PaginationProps> = ({
                 onClick={() => handlePageClick(page)}
                 className={`min-w-[28px] h-6 text-xs font-medium rounded-full transition-all duration-200 ${
                   page === currentPage
-                    ? 'bg-teal-500 text-white shadow-sm'
-                    : 'text-teal-500 hover:bg-teal-50'
+                    ? 'bg-red-500 text-white shadow-sm'
+                    : 'text-red-500 hover:bg-red-50'
                 }`}
               >
                 {page}
@@ -154,7 +152,7 @@ const Pagination: React.FC<PaginationProps> = ({
           className={`px-2 py-1 text-xs font-medium rounded-full transition-colors duration-200 ${
             currentPage === totalPages
               ? 'text-gray-400 cursor-not-allowed'
-              : 'text-teal-500 hover:bg-teal-50'
+              : 'text-red-500 hover:bg-red-50'
           }`}
         >
           Next

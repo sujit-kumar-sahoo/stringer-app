@@ -7,10 +7,20 @@ import { useCount } from '@/context/CountContext';
 import Link from 'next/link'
 import React, { useState, useEffect } from 'react'
 import { ChevronDown, Search, Grid3X3, List, MapPin, Clock, FileText, AlertCircle, Image, Video, Headphones, File, Lock, Calendar, X } from 'lucide-react'
-import Pagination from '../../../../../../components/ui/pagination';
+import Pagination from '@/components/ui/pagination';
 import { fetchActivities, Activity, FetchActivitiesParams } from '@/services/paginationService';
 
-const Listing: React.FC = () => {
+interface ActivityListingProps {
+  status: number;
+  countKey: 'waitList' | 'inputWIP' | 'inputToStringer' | 'outputToInput' | 'published' | 'draft';
+  title?: string;
+}
+
+const ActivityListing: React.FC<ActivityListingProps> = ({
+  status,
+  countKey,
+  title = 'Activities'
+}) => {
   const { updateCount } = useCount();
   const [searchTerm, setSearchTerm] = useState('')
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('')
@@ -24,7 +34,7 @@ const Listing: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalRecords, setTotalRecords] = useState(0)
-  const [limit] = useState(50)
+  const [limit] = useState(12)
   const [error, setError] = useState<string | null>(null)
   const [locationOptions, setLocationOptions] = useState<string[]>([])
   const [priorityOptions, setPriorityOptions] = useState<Array<Record<string, any>>>([])
@@ -42,7 +52,8 @@ const Listing: React.FC = () => {
         dateFrom,
         dateTo,
         selectedLocations,
-        selectedPriorities
+        selectedPriorities,
+        status
       }
       const data = await fetchActivities(params)
       setActivities(data.results)
@@ -50,8 +61,8 @@ const Listing: React.FC = () => {
       setCurrentPage(page)
 
       if (page === 1) {
-        updateCount('waitList', data.total_records)
-        console.log('Updated waitList count to:', data.total_records)
+        updateCount(countKey, data.total_records)
+        console.log(`Updated ${countKey} count to:`, data.total_records)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
@@ -62,8 +73,6 @@ const Listing: React.FC = () => {
     }
   }
 
-
-
   const hasActiveFilters = () => {
     return !!(
       searchTerm.trim() ||
@@ -73,7 +82,6 @@ const Listing: React.FC = () => {
       selectedPriorities.length > 0
     )
   }
-
 
   const fetchLocations = async () => {
     try {
@@ -113,7 +121,7 @@ const Listing: React.FC = () => {
 
   useEffect(() => {
     loadActivities(1)
-  }, [])
+  }, [status])
 
   useEffect(() => {
     fetchLocations()
@@ -145,7 +153,6 @@ const Listing: React.FC = () => {
     setSelectedLocations([])
     setSelectedPriorities([])
 
-
     try {
       setIsLoading(true)
       setError(null)
@@ -156,13 +163,14 @@ const Listing: React.FC = () => {
         dateFrom: '',
         dateTo: '',
         selectedLocations: [],
-        selectedPriorities: []
+        selectedPriorities: [],
+        status
       }
       const data = await fetchActivities(params)
       setActivities(data.results)
       setTotalRecords(data.total_records)
       setCurrentPage(1)
-      updateCount('waitList', data.total_records)
+      updateCount(countKey, data.total_records)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
       setActivities([])
@@ -171,7 +179,6 @@ const Listing: React.FC = () => {
       setIsLoading(false)
     }
   }
-
 
   const toggleLocationSelection = (location: string) => {
     setSelectedLocations(prev =>
@@ -380,8 +387,8 @@ const Listing: React.FC = () => {
                 }}
                 disabled={!dateFrom && !dateTo}
                 className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors ${dateFrom || dateTo
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
               >
                 Apply
@@ -437,7 +444,6 @@ const Listing: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
       <div className="sticky top-0 z-20 bg-gray-50 shadow-sm">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -510,8 +516,8 @@ const Listing: React.FC = () => {
                       onClick={applySearch}
                       disabled={!hasActiveFilters()}
                       className={`px-4 py-2.5 rounded-lg transition-colors text-sm font-medium ${hasActiveFilters()
-                          ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         }`}
                     >
                       Apply
@@ -534,18 +540,7 @@ const Listing: React.FC = () => {
                   </div>
                 </div>
 
-                {totalRecords > 0 && (
-                  <div className="flex justify-end mt-2">
-                    <div className="w-80 float-end">
-                      <Pagination
-                        offset={(currentPage - 1) * limit}
-                        totalRecords={totalRecords}
-                        limit={limit}
-                        onPageChange={handlePageChange}
-                      />
-                    </div>
-                  </div>
-                )}
+
               </div>
             </div>
           </div>
@@ -553,7 +548,7 @@ const Listing: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="max-w-7xl mx-auto py-6">
+      <div className="relative max-w-7xl mx-auto py-6">
         {/* Content Grid */}
         <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
           {activities.map((activity) => {
@@ -587,7 +582,7 @@ const Listing: React.FC = () => {
                     </div>
                     <div
                       style={{
-                        backgroundColor: "rgb(236 39 39 / 79%)",
+                        backgroundColor:"#a4170c",
                         color: "#fff",
                         paddingTop: "0.35rem",
                         paddingBottom: "0.35rem",
@@ -660,13 +655,13 @@ const Listing: React.FC = () => {
                     {renderFileTypeIcons(activity.attachments)}
                     <div
                       style={{
-                        backgroundColor: "#dc2626",
+                        backgroundColor: "#a4170c",
                         color: "#fff",
                         borderRadius: "1.375rem",
-                        paddingTop: "0.35rem",
-                        paddingBottom: "0.35rem",
-                        paddingLeft: ".45rem",
-                        paddingRight: ".45rem",
+                        paddingTop: "0.15rem",
+                        paddingBottom: "0.15rem",
+                        paddingLeft: ".25rem",
+                        paddingRight: ".25rem",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -717,9 +712,21 @@ const Listing: React.FC = () => {
             <p className="text-gray-500">Try adjusting your filters or search terms</p>
           </div>
         )}
+        {totalRecords > 0 && (
+        <div className="fixed bottom-5 right-0 transform  z-50 max-w-7xl w-full flex justify-center pointer-events-none">
+          <div className="pointer-events-auto">
+            <Pagination
+              offset={(currentPage - 1) * limit}
+              totalRecords={totalRecords}
+              limit={limit}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        </div>
+        )}
       </div>
     </div>
   )
 }
 
-export default withAuth(Listing);
+export default withAuth(ActivityListing);

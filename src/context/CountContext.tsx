@@ -9,6 +9,7 @@ export interface CountData {
   inputToStringer: number;
   outputToInput: number;
   published: number;
+  draft:number;
 }
 
 interface CountContextType {
@@ -26,6 +27,7 @@ const defaultCounts: CountData = {
   inputToStringer: 0,
   outputToInput: 0,
   published: 0,
+  draft:0,
 };
 
 const CountContext = createContext<CountContextType | undefined>(undefined);

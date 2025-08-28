@@ -28,6 +28,7 @@ export interface ApiResponse {
 export interface FetchActivitiesParams {
   page: number
   limit: number
+  status: number 
   appliedSearchTerm?: string
   dateFrom?: string
   dateTo?: string
@@ -41,7 +42,8 @@ export const fetchActivities = async (params: FetchActivitiesParams): Promise<Ap
   try {
     const { 
       page, 
-      limit, 
+      limit,
+      status, 
       appliedSearchTerm, 
       dateFrom, 
       dateTo, 
@@ -53,18 +55,15 @@ export const fetchActivities = async (params: FetchActivitiesParams): Promise<Ap
     
     const offset = (page - 1) * limit
     
-   
     const queryParts = [
-      `status=2`,
+      `status=${status}`, 
       `limit=${limit}`,
       `offset=${offset}`
     ]
-
    
     if (appliedSearchTerm) {
       queryParts.push(`headline=${encodeURIComponent(appliedSearchTerm)}`)
     }
-
     
     if (dateFrom) {
       queryParts.push(`from_date=${dateFrom}`)
@@ -72,23 +71,19 @@ export const fetchActivities = async (params: FetchActivitiesParams): Promise<Ap
     if (dateTo) {
       queryParts.push(`to_date=${dateTo}`)
     }
-
     if (selectedLocations && selectedLocations.length > 0) {
       queryParts.push(`location=${selectedLocations.join(',')}`)
     }
-
     if (selectedPriorities && selectedPriorities.length > 0) {
       queryParts.push(`priority=${selectedPriorities.join(',')}`)
     }
-
     if (selectedCreatedBy && selectedCreatedBy.length > 0) {
       queryParts.push(`created_by=${selectedCreatedBy.join(',')}`)
     }
-
     if (selectedContentTypes && selectedContentTypes.length > 0) {
       queryParts.push(`content_type=${selectedContentTypes.join(',')}`)
     }
-
+    
     const queryString = queryParts.join('&')
     console.log('API URL:', `/api/content/?${queryString}`) 
     
@@ -98,7 +93,6 @@ export const fetchActivities = async (params: FetchActivitiesParams): Promise<Ap
       },
     })
     
-   
     return response.data
     
   } catch (error: any) {

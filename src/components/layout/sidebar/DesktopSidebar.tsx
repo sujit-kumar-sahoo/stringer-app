@@ -4,38 +4,25 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  FileText, Plus,
   LucideIcon,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  Database,
   RefreshCw
 } from 'lucide-react';
 import { useSidebar } from '../../../context/SidebarContext';
 import { useCount } from '../../../context/CountContext';
 
-// Type definitions
-type ColorType = 'blue' | 'emerald' | 'purple' | 'orange' | 'yellow';
-
-interface SubMenuItem {
-  id: string;
-  label: string;
-  href: string;
-  countKey?: keyof import('../../../context/CountContext').CountData;
-}
-
-interface MenuItem {
-  id: string;
-  icon: LucideIcon;
-  label: string;
-  count?: number;
-  color: ColorType;
-  href: string;
-  subItems?: SubMenuItem[];
-  countKey?: keyof import('../../../context/CountContext').CountData; 
-}
+// Import constants and types
+import { 
+  MAIN_MENU_ITEMS,
+  MenuItem,
+  SubMenuItem,
+  ColorType,
+  getColorClasses,
+  getActiveIndicatorClasses 
+} from '@/constants/menuItems';
 
 interface SidebarItemProps {
   item: MenuItem;
@@ -57,79 +44,6 @@ const DesktopSidebar: React.FC = () => {
   const pathname = usePathname();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
-  
-  const mainItems: MenuItem[] = [
-    { 
-      id: 'dashboard', 
-      icon: FileText, 
-      label: 'Dashboard', 
-      color: 'emerald', 
-      href: '/dashboard',
-      subItems: [
-        { id: 'dashboard-input', label: 'Input', href: '/dashboard/input' },
-        { id: 'dashboard-output', label: 'Output', href: '/dashboard/output' },
-        { id: 'dashboard-stringer', label: 'Stringer', href: '/dashboard/stringer' },
-      ]
-    },
-    { 
-      id: 'input', 
-      icon: Database, 
-      label: 'Input', 
-      color: 'purple', 
-      href: '',
-      
-      
-      subItems: [
-        { 
-          id: 'input-listing', 
-          label: 'Wait List', 
-          href: '/list/input/wait-list', 
-          countKey: 'waitList'
-        },
-        { 
-          id: 'input-wip', 
-          label: 'Input WIP', 
-          href: '/input/wip', 
-          countKey: 'inputWip' 
-        },
-        
-
-        { 
-          id: 'input-to-stringer', 
-          label: 'Input to Stringer', 
-          href: '/input/to-stringer', 
-          countKey: 'inputToStringer' 
-        },
-        { 
-          id: 'output-to-input', 
-          label: 'Output to Input', 
-          href: '/input/to-input', 
-          countKey: 'outputToInput' 
-        },
-        { 
-          id: 'published', 
-          label: 'Published', 
-          href: '/input/published', 
-          countKey: 'published' 
-        },
-      ]
-    },
-    { 
-      id: 'input-create', 
-      icon: FileText, 
-      label: 'Create', 
-      color: 'emerald', 
-      href: '/create',
-    },
-    { 
-      id: 'input-activity', 
-      icon: FileText, 
-      label: 'Activity log', 
-      color: 'emerald', 
-      href: '/activity-log',
-    },
-  ];
-
   const handleToggleExpand = (id: string) => {
     setExpandedMenus(prev => 
       prev.includes(id) 
@@ -145,17 +59,6 @@ const DesktopSidebar: React.FC = () => {
   const isSubItemActive = (item: MenuItem): boolean => {
     if (!item.subItems) return false;
     return item.subItems.some(subItem => pathname === subItem.href);
-  };
-
-  const getColorClasses = (color: ColorType, isActive: boolean = false): string => {
-    if (isActive) {
-      return 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-orange-400 border-l-2 border-orange-400';
-    }
-    return 'hover:bg-gradient-to-r hover:from-white/5 hover:to-white/10 text-white hover:text-yellow-300 transition-all duration-200';
-  };
-
-  const getActiveIndicatorClasses = (): string => {
-    return 'bg-gradient-to-b from-orange-400 to-yellow-500 shadow-lg shadow-orange-500/50';
   };
 
   const SidebarItem: React.FC<SidebarItemProps> = ({ 
@@ -359,7 +262,7 @@ const DesktopSidebar: React.FC = () => {
         <div>
           <SectionHeader title="Main" action isMinimized={!isOpen} />
           <div className="space-y-2">
-            {mainItems.map((item: MenuItem) => (
+            {MAIN_MENU_ITEMS.map((item: MenuItem) => (
               <SidebarItem 
                 key={item.id} 
                 item={item} 

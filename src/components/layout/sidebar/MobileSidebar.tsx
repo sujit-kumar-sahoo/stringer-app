@@ -4,37 +4,24 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  FileText, 
   LucideIcon,
   ChevronDown,
   ChevronUp,
-  Database,
   X,
   RefreshCw
 } from 'lucide-react';
 import { useSidebar } from '../../../context/SidebarContext';
 import { useCount } from '../../../context/CountContext';
 
-// Type definitions
-type ColorType = 'blue' | 'emerald' | 'purple' | 'orange' | 'yellow';
-
-interface SubMenuItem {
-  id: string;
-  label: string;
-  href: string;
-  countKey?: keyof import('../../../context/CountContext').CountData;
-}
-
-interface MenuItem {
-  id: string;
-  icon: LucideIcon;
-  label: string;
-  count?: number;
-  color: ColorType;
-  href: string;
-  subItems?: SubMenuItem[];
-  countKey?: keyof import('../../../context/CountContext').CountData;
-}
+// Import constants and types
+import { 
+  MAIN_MENU_ITEMS,
+  MenuItem,
+  SubMenuItem,
+  ColorType,
+  getColorClasses,
+  getActiveIndicatorClasses 
+} from '@/constants/menuItems';
 
 interface SidebarItemProps {
   item: MenuItem;
@@ -55,74 +42,6 @@ const MobileSidebar: React.FC = () => {
   const pathname = usePathname();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
-  const mainItems: MenuItem[] = [
-    { 
-      id: 'dashboard', 
-      icon: FileText, 
-      label: 'Dashboard', 
-      color: 'emerald', 
-      href: '/dashboard',
-      subItems: [
-        { id: 'dashboard-you', label: 'You', href: '/dashboard/you' },
-        { id: 'dashboard-we', label: 'We', href: '/dashboard/we' },
-        { id: 'dashboard-our', label: 'Our', href: '/dashboard/our' },
-      ]
-    },
-    { 
-      id: 'input', 
-      icon: Database, 
-      label: 'Input', 
-      color: 'purple', 
-      href: '/input',
-      subItems: [
-        { 
-          id: 'input-listing', 
-          label: 'Wait List', 
-          href: '/input/wait-list', 
-          countKey: 'waitList'
-        },
-        { 
-          id: 'input-wip', 
-          label: 'Input WIP', 
-          href: '/input/wip', 
-          countKey: 'inputWip' 
-        },
-        { 
-          id: 'input-to-stringer', 
-          label: 'Input to Stringer', 
-          href: '/input/to-stringer', 
-          countKey: 'inputToStringer' 
-        },
-        { 
-          id: 'output-to-input', 
-          label: 'Output to Input', 
-          href: '/output/to-input', 
-          countKey: 'outputToInput' 
-        },
-        { 
-          id: 'published', 
-          label: 'Published', 
-          href: '/published', 
-          countKey: 'published' 
-        },
-      ]
-    },
-    { 
-      id: 'input-create', 
-      icon: FileText, 
-      label: 'Create', 
-      color: 'emerald', 
-      href: '/create',
-    },
-    { 
-      id: 'input-activity', 
-      icon: FileText, 
-      label: 'Activity log', 
-      color: 'emerald', 
-      href: '/activity-log',
-    },
-  ];
-
   const handleToggleExpand = (id: string) => {
     setExpandedMenus(prev => 
       prev.includes(id) 
@@ -142,17 +61,6 @@ const MobileSidebar: React.FC = () => {
   const isSubItemActive = (item: MenuItem): boolean => {
     if (!item.subItems) return false;
     return item.subItems.some(subItem => pathname === subItem.href);
-  };
-
-  const getColorClasses = (color: ColorType, isActive: boolean = false): string => {
-    if (isActive) {
-      return 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-orange-400 border-l-4 border-orange-400';
-    }
-    return 'hover:bg-gradient-to-r hover:from-white/5 hover:to-white/10 text-white hover:text-yellow-300 transition-all duration-200';
-  };
-
-  const getActiveIndicatorClasses = (): string => {
-    return 'bg-gradient-to-b from-orange-400 to-yellow-500 shadow-lg shadow-orange-500/50';
   };
 
   const SidebarItem: React.FC<SidebarItemProps> = ({ 
@@ -293,7 +201,6 @@ const MobileSidebar: React.FC = () => {
         {title}
       </h3>
       <div className="flex items-center space-x-1">
-     
         <button 
           onClick={handleRefreshCounts}
           disabled={isLoading}
@@ -302,7 +209,6 @@ const MobileSidebar: React.FC = () => {
         >
           <RefreshCw className={`w-3.5 h-3.5 text-slate-400 hover:text-white ${isLoading ? 'animate-spin' : ''}`} />
         </button>
-       
       </div>
     </div>
   );
@@ -347,7 +253,7 @@ const MobileSidebar: React.FC = () => {
           <div>
             <SectionHeader title="Main" />
             <div className="space-y-1">
-              {mainItems.map((item: MenuItem) => (
+              {MAIN_MENU_ITEMS.map((item: MenuItem) => (
                 <SidebarItem 
                   key={item.id} 
                   item={item} 
