@@ -46,10 +46,12 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
           (!selectedLocation || location.id !== selectedLocation.id);
       });
       setFilteredLocations(filtered);
-      setIsDropdownOpen(true);
     } else {
-      setFilteredLocations([]);
-      setIsDropdownOpen(false);
+      // When no search term, show all available locations (excluding selected)
+      const unselectedLocations = allLocations.filter(location => 
+        !selectedLocation || location.id !== selectedLocation.id
+      );
+      setFilteredLocations(unselectedLocations);
     }
     setHighlightedIndex(-1);
   }, [searchTerm, allLocations, selectedLocation]);
@@ -110,22 +112,30 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
       setIsDropdownOpen(false);
       setSearchTerm('');
     } else if (e.key === 'Backspace' && !searchTerm && selectedLocation) {
-      // Clear location when backspacing on empty input
+      // Clear selected location when backspacing on empty input
       clearLocation();
     }
   }, [highlightedIndex, filteredLocations, searchTerm, selectLocation, selectedLocation, clearLocation]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    // Open dropdown when typing
+    if (!isDropdownOpen) {
+      setIsDropdownOpen(true);
+    }
+  }, [isDropdownOpen]);
+
+  const handleInputClick = useCallback(() => {
+    // Open dropdown when clicking on input
+    setIsDropdownOpen(true);
   }, []);
 
   const handleInputFocus = useCallback(() => {
-    if (searchTerm.trim()) {
-      setIsDropdownOpen(true);
-    }
-  }, [searchTerm]);
+    // Open dropdown when focusing on input
+    setIsDropdownOpen(true);
+  }, []);
 
-  // Display value - show selected location or search term
+  // Display value logic similar to TagSearch
   const displayValue = selectedLocation && !searchTerm ? selectedLocation.name : searchTerm;
 
   return (
@@ -164,6 +174,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={handleInputFocus}
+          onClick={handleInputClick}
           placeholder={isLoading ? "Loading locations..." : placeholder}
           disabled={isLoading}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:text-gray-500"
@@ -218,18 +229,13 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
               </svg>
               <span className="text-blue-600">Create new location:</span> "{searchTerm.trim()}"
             </button>
+          ) : allLocations.length === 0 ? (
+            <div className="px-4 py-2 text-sm text-gray-500">
+              No locations available
+            </div>
           ) : null}
         </div>
       )}
-
-      {/* Helper Text */}
-      <p className="text-xs text-gray-500 mt-1">
-        {isLoading 
-          ? "Loading location options..." 
-          : "Type to create a new location or search available locations."
-        }
-        {selectedLocation && ` Selected: ${selectedLocation.name || 'Unknown'}`}
-      </p>
     </div>
   );
 };

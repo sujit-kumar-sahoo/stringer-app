@@ -228,23 +228,26 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
     })
   }
 
-  const calculateWaitingTime = (createdDate: string) => {
-    const created = new Date(createdDate)
-    const now = new Date()
-    const diffMs = now.getTime() - created.getTime()
+const calculateWaitingTime = (createdDate: string) => {
+  const created = new Date(createdDate)
+  const now = new Date()
+  const diffMs = now.getTime() - created.getTime()
 
-    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
 
-    if (days > 0) {
-      return `${days} d, ${hours} hr, ${minutes} min`
-    } else if (hours > 0) {
-      return `${hours} hr, ${minutes} min`
-    } else {
-      return `${minutes} min`
-    }
+  if (days > 0) {
+    // When showing days, only show days and hours (no minutes)
+    return `${days} d, ${hours} hr`
+  } else if (hours > 0) {
+    // When showing hours, show hours and minutes
+    return `${hours} hr, ${minutes} min`
+  } else {
+    // When less than an hour, show only minutes
+    return `${minutes} min`
   }
+}
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -553,7 +556,7 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
         <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
           {activities.map((activity) => {
             const waitingTime = calculateWaitingTime(activity.created_date)
-
+            
             const cardContent = (
               <>
                 {activity.status_text && activity.status_text.trim() !== '' ? (
@@ -624,13 +627,20 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
                       </div>
                     </div>
                   </div>
-                  <h3
+                   <h3
                     className="font-semibold text-gray-900 text-base leading-tight"
                     style={{
                       minHeight: "80px",
                       borderBottom: "1px solid #aba7a759",
                       marginBottom: "1px",
-                      paddingBottom: "20px"
+                      paddingBottom: "20px",
+                      display: "-webkit-box",
+                      WebkitBoxOrient: "vertical",
+                      WebkitLineClamp: 3,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      wordWrap: "break-word",
+                      lineHeight: "1.4"
                     }}>
                     {activity.headline}
                   </h3>
@@ -725,6 +735,8 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
         </div>
         )}
       </div>
+ 
+
     </div>
   )
 }

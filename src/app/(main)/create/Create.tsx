@@ -2,6 +2,7 @@
 import withAuth from '@/hoc/withAuth';
 import React, { useState, useRef, useEffect } from 'react'
 import { getPriorities } from '@/services/priorityService';
+import { getTags } from '@/services/tagService';
 import { getLocations } from '@/services/locationService';
 import { getContentTypes } from '@/services/contentTypeService';
 import { createContent } from '@/services/contentService';
@@ -20,6 +21,11 @@ interface FileWithMeta {
 interface Tag {
   id: string;
   name: string;
+    selectedTag: Tag | null;
+  onTagChange: (tag: Tag | null) => void;
+  availableTags: Tag[];
+  isLoading?: boolean;
+  placeholder?: string;
 }
 
 function Create() {
@@ -42,13 +48,14 @@ function Create() {
   }
  
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
-  //const [attachments, setAttachments] = useState<FileList | null>(null)
+   const [tagOptions, setTagOptions] = useState<Tag[]>([])
+ const [isLoadingTags, setIsLoadingTags] = useState(true)
 
-  // Priority state
+
   const [priorityOptions, setPriorityOptions] = useState<{ value: string, label: string }[]>([])
   const [isLoadingPriorities, setIsLoadingPriorities] = useState(true)
 
-  // Location state
+
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [locationOptions, setLocationOptions] = useState<Location[]>([])
   const [isLoadingLocations, setIsLoadingLocations] = useState(true)
@@ -132,7 +139,7 @@ function Create() {
 
     const fetchContentTypes = async () => {
       try {
-        setIsLoadingLocations(true)
+        setIsLoadingContentType(true)
         const response = await getContentTypes()
 
         if (response.success && response.data && Array.isArray(response.data)) {
@@ -153,7 +160,30 @@ function Create() {
         setIsLoadingLocations(false)
       }
     }
+ const fetchTags = async () => {
+  try {
+    setIsLoadingTags(true) // ✅ Correct loading state
+    const response = await getTags()
 
+    if (response.success && response.data && Array.isArray(response.data)) {
+      const tags = response.data
+        .filter((item: any) => item.name && typeof item.name === 'string') // ✅ Correct field
+        .map((item: any) => ({
+          id: item.id.toString(),
+          name: item.name.trim() // ✅ Correct field name
+        }))
+      setTagOptions(tags) // ✅ Set correct state
+    } else {
+      console.error('Invalid tags response structure:', response) // ✅ Correct error message
+    }
+  } catch (error) {
+    console.error('Error fetching tags:', error) // ✅ Correct error message
+  } finally {
+    setIsLoadingTags(false) // ✅ Correct loading state
+  }
+}
+    
+    fetchTags()
     fetchPriorities()
     fetchLocations()
     fetchContentTypes()
@@ -634,6 +664,7 @@ function Create() {
                     </option>
                   ))}
                 </select>
+               
               </div>
             </div>
 
@@ -649,11 +680,13 @@ function Create() {
               />
 
 
-              <TagsSearch
-               selectedTag={selectedTag}
-              onTagChange={setSelectedTag}
-              placeholder="Choose a tag..."
-              />
+             <TagsSearch
+  selectedTag={selectedTag}
+  onTagChange={setSelectedTag}
+  availableTags={tagOptions}
+  isLoading={isLoadingTags} 
+  placeholder="Choose a tag..."
+/>
 
             </div>
             <div>

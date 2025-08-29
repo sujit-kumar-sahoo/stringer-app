@@ -1,4 +1,4 @@
-// Single Tag Search Component
+// Enhanced Tag Search Component
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 
 interface Tag {
@@ -11,13 +11,15 @@ interface TagSearchProps {
   onTagChange: (tag: Tag | null) => void;
   availableTags?: Tag[]; 
   placeholder?: string;
+  isLoading?: boolean;
 }
 
 const TagSearch: React.FC<TagSearchProps> = ({
   selectedTag,
   onTagChange,
   availableTags = [],
-  placeholder = "Search or select a tag..."
+  placeholder = "Search tags...",
+  isLoading = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -27,46 +29,32 @@ const TagSearch: React.FC<TagSearchProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Memoize default tags to prevent recreation on every render
-  const defaultTags = useMemo<Tag[]>(() => [
-    { id: '1', name: 'Breaking News' },
-    { id: '2', name: 'Politics' },
-    { id: '3', name: 'Economy' },
-    { id: '4', name: 'Sports' },
-    { id: '5', name: 'Technology' },
-    { id: '6', name: 'Health' },
-    { id: '7', name: 'Education' },
-    { id: '8', name: 'Environment' },
-    { id: '9', name: 'Entertainment' },
-    { id: '10', name: 'Business' },
-    { id: '11', name: 'Science' },
-    { id: '12', name: 'Culture' },
-    { id: '13', name: 'International' },
-    { id: '14', name: 'Local News' },
-    { id: '15', name: 'Investigation' }
-  ], []);
-
-  // Memoize allTags to prevent dependency changes
-  const allTags = useMemo(() => 
-    availableTags.length > 0 ? availableTags : defaultTags,
-    [availableTags, defaultTags]
-  );
+  // Use only provided tags (no defaults)
+  const allTags = useMemo(() => availableTags, [availableTags]);
 
   // Filter tags effect with optimized dependencies
   useEffect(() => {
     if (searchTerm.trim()) {
-      const filtered = allTags.filter(tag =>
-        tag.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const filtered = allTags.filter(tag => {
+        // Safety check for tag name
+        const tagName = tag?.name;
+        if (!tagName || typeof tagName !== 'string') {
+          return false;
+        }
+        
+        return tagName.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          (!selectedTag || tag.id !== selectedTag.id);
+      });
       setFilteredTags(filtered);
-      setIsDropdownOpen(true);
     } else {
-      // Show all available tags when no search term
-      setFilteredTags(allTags);
-      setIsDropdownOpen(false);
+      // When no search term, show all available tags (excluding selected)
+      const unselectedTags = allTags.filter(tag => 
+        !selectedTag || tag.id !== selectedTag.id
+      );
+      setFilteredTags(unselectedTags);
     }
     setHighlightedIndex(-1);
-  }, [searchTerm, allTags]);
+  }, [searchTerm, allTags, selectedTag]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -90,7 +78,7 @@ const TagSearch: React.FC<TagSearchProps> = ({
     onTagChange(tag);
     setSearchTerm('');
     setIsDropdownOpen(false);
-    inputRef.current?.blur();
+    inputRef.current?.focus();
   }, [onTagChange]);
 
   const clearTag = useCallback(() => {
@@ -102,13 +90,9 @@ const TagSearch: React.FC<TagSearchProps> = ({
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (!isDropdownOpen) {
-        setIsDropdownOpen(true);
-      } else {
-        setHighlightedIndex(prev => 
-          prev < filteredTags.length - 1 ? prev + 1 : prev
-        );
-      }
+      setHighlightedIndex(prev => 
+        prev < filteredTags.length - 1 ? prev + 1 : prev
+      );
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
@@ -116,13 +100,6 @@ const TagSearch: React.FC<TagSearchProps> = ({
       e.preventDefault();
       if (highlightedIndex >= 0 && highlightedIndex < filteredTags.length) {
         selectTag(filteredTags[highlightedIndex]);
-      } else if (searchTerm.trim() && filteredTags.length === 0) {
-        // Create new tag
-        const newTag: Tag = {
-          id: Date.now().toString(),
-          name: searchTerm.trim()
-        };
-        selectTag(newTag);
       }
     } else if (e.key === 'Escape') {
       setIsDropdownOpen(false);
@@ -131,15 +108,28 @@ const TagSearch: React.FC<TagSearchProps> = ({
       // Clear selected tag when backspacing on empty input
       clearTag();
     }
-  }, [highlightedIndex, filteredTags, searchTerm, selectTag, selectedTag, clearTag, isDropdownOpen]);
+  }, [highlightedIndex, filteredTags, selectTag, selectedTag, clearTag, searchTerm]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    // Open dropdown when typing
+    if (!isDropdownOpen) {
+      setIsDropdownOpen(true);
+    }
+  }, [isDropdownOpen]);
+
+  const handleInputClick = useCallback(() => {
+    // Open dropdown when clicking on input
+    setIsDropdownOpen(true);
   }, []);
 
   const handleInputFocus = useCallback(() => {
+    // Open dropdown when focusing on input
     setIsDropdownOpen(true);
   }, []);
+
+  // Display value logic similar to LocationSearch
+  const displayValue = selectedTag && !searchTerm ? selectedTag.name : searchTerm;
 
   return (
     <div className="relative">
@@ -148,10 +138,13 @@ const TagSearch: React.FC<TagSearchProps> = ({
       </label>
       
       {/* Selected Tag Display */}
-      {selectedTag && (
-        <div className="mb-2 flex items-center">
+      {selectedTag && !searchTerm && (
+        <div className="flex items-center mb-2">
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-            {selectedTag.name}
+            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+            </svg>
+            {selectedTag?.name || 'Unknown Tag'}
             <button
               type="button"
               onClick={clearTag}
@@ -170,18 +163,20 @@ const TagSearch: React.FC<TagSearchProps> = ({
         <input
           ref={inputRef}
           type="text"
-          value={searchTerm}
+          value={displayValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={handleInputFocus}
-          placeholder={selectedTag ? `Selected: ${selectedTag.name}` : placeholder}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          onClick={handleInputClick}
+          placeholder={isLoading ? "Loading tags..." : placeholder}
+          disabled={isLoading}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:text-gray-500"
         />
         
-        {/* Search/Dropdown Icon */}
+        {/* Tag Icon */}
         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
           </svg>
         </div>
       </div>
@@ -199,46 +194,30 @@ const TagSearch: React.FC<TagSearchProps> = ({
                   key={tag.id}
                   type="button"
                   onClick={() => selectTag(tag)}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition-colors flex items-center justify-between ${
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition-colors flex items-center ${
                     index === highlightedIndex ? 'bg-blue-50 text-blue-700' : 'text-gray-900'
                   }`}
                 >
-                  <span>{tag.name}</span>
-                  {selectedTag?.id === tag.id && (
-                    <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
+                  <svg className="w-4 h-4 mr-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  {tag.name}
                 </button>
               ))}
             </>
           ) : searchTerm.trim() ? (
-            <button
-              type="button"
-              onClick={() => {
-                const newTag: Tag = {
-                  id: Date.now().toString(),
-                  name: searchTerm.trim()
-                };
-                selectTag(newTag);
-              }}
-              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 text-gray-700 transition-colors"
-            >
-              <span className="text-blue-600">Create new tag:</span> "{searchTerm.trim()}"
-            </button>
-          ) : (
             <div className="px-4 py-2 text-sm text-gray-500">
-              No tags found
+              No tags found matching "{searchTerm.trim()}"
             </div>
-          )}
+          ) : allTags.length === 0 ? (
+            <div className="px-4 py-2 text-sm text-gray-500">
+              No tags available
+            </div>
+          ) : null}
         </div>
       )}
 
-      {/* Helper Text */}
-      <p className="text-xs text-gray-500 mt-1">
-        Search for an existing tag.
-        {selectedTag ? ' Press backspace to clear the selected tag.' : ''}
-      </p>
+     
     </div>
   );
 };

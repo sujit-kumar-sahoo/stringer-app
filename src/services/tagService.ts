@@ -4,9 +4,9 @@ interface ApiResponse {
   message?: string;
   data?: any;
 }
-export const getLocations = async (): Promise<ApiResponse> => {
+export const getTags = async (): Promise<ApiResponse> => {
   try {
-    const response = await api.get('/api/location/', {
+    const response = await api.get('/api/tag/', {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -19,13 +19,13 @@ export const getLocations = async (): Promise<ApiResponse> => {
   } catch (error: any) {
     return {
       success: false,
-      message: error.response?.data?.detail || error.response?.data?.message || 'Error fetching locations.',
+      message: error.response?.data?.detail || error.response?.data?.message || 'Error fetching tags.',
     };
   }
 };
-export const addLocations = async  (formData: any): Promise<ApiResponse> => {
+export const addTags = async  (formData: any): Promise<ApiResponse> => {
   try {
-    const response = await api.post('/api/location/',
+    const response = await api.post('/api/tag/',
        formData, 
        {
       headers: {
@@ -40,7 +40,7 @@ export const addLocations = async  (formData: any): Promise<ApiResponse> => {
   } catch (error: any) {
     return {
       success: false,
-      message: error.response?.data?.detail || error.response?.data?.message || 'Error fetching locations.',
+      message: error.response?.data?.detail || error.response?.data?.message || 'Error fetching tags.',
     };
   }
 };

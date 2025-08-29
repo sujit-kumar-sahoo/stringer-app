@@ -106,6 +106,18 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
     color: 'emerald', 
     href: '/activity-log',
   },
+  {
+  id: 'master', 
+    icon: FileText, 
+    label: 'Master', 
+    color: 'emerald', 
+    href: '/master',
+    subItems: [
+      { id: 'master-location', label: 'Add Location', href: '/master/location' },
+      { id: 'master-tag', label: 'Add Tag', href: '/master/tag' },
+      { id: 'master-content', label: 'Add ContentType', href: '/master/content' },
+    ]
+  },
 ];
 
 // Color utility functions
