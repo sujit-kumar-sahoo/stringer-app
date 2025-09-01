@@ -123,3 +123,55 @@ export const getContentByVersionId = async (id:any , versionNumber:any): Promise
     };
   }
 };
+
+export const getStatusWiseCount = async (
+    params?: Record<string, string>
+  ): Promise<ApiResponse> => {
+    try {
+      const response = await api.get(`/api/content/status-wise-count`, {
+        params,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.detail ||
+          error.response?.data?.message ||
+          "Error fetching status wise count.",
+      };
+    }
+};
+
+export const getPriorityWiseCount = async (
+    params?: Record<string, string>
+  ): Promise<ApiResponse> => {
+    try {
+      const response = await api.get(`/api/content/priority-wise-count`, {
+        params,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.detail ||
+          error.response?.data?.message ||
+          "Error fetching status wise count.",
+      };
+    }
+};

@@ -5,6 +5,7 @@ import BarChartCard from "@/components/Dashboard/BarChartCard";
 import PieChartCard from "@/components/Dashboard/PieChartCard";
 import MultiBarChartCard from "@/components/Dashboard/MultiBarChartCard";
 import React, { useState, useRef, useEffect } from 'react'
+import { getStatusWiseCount, getPriorityWiseCount } from '@/services/contentService';
 
 function DashboardPage() {
   const rawData = [
@@ -23,53 +24,58 @@ function DashboardPage() {
     { name: "Fri", value: 18, date: "2025-08-22" },
   ];
   
-  const [priorityDataCount, setPriorityDataCount] = useState([
-      { count: 10, stage_number: 1, status_text: "Draft" },
-      { count: 3, stage_number: 2, status_text: "Waiting in Input" },
-      { count: 5, stage_number: 3, status_text: "Waiting in Output" },
-      { count: 9, stage_number: 4, status_text: "Rejected" },
-    ])
-
-  const handlePriorityApplyFilter = (fromDate: string, toDate: string) => {
-    console.log("Filter applied:", fromDate, toDate);
-    setStatusDataCount([
-      { count: 10, stage_number: 1, status_text: "Draft" },
-      { count: 30, stage_number: 2, status_text: "Waiting in Input" },
-      { count: 55, stage_number: 3, status_text: "Waiting in Output" },
-      { count: 99, stage_number: 4, status_text: "Rejected" },
-    ]);
-  };
 
 
-  const [statusDataCount, setStatusDataCount] = useState([
-          { count: 10, stage_number: 1, status_text: "Draft" },
-          { count: 3, stage_number: 2, status_text: "Waiting in Input" },
-          { count: 5, stage_number: 3, status_text: "Waiting in Output" },
-          { count: 9, stage_number: 4, status_text: "Rejected" },
-        ])
+  
 
-  const handleStatusApplyFilter = (fromDate: string, toDate: string) => {
-    console.log("Filter applied:", fromDate, toDate);
-    setStatusDataCount([
-      { count: 10, stage_number: 1, status_text: "Draft" },
-      { count: 30, stage_number: 2, status_text: "Waiting in Input" },
-      { count: 55, stage_number: 3, status_text: "Waiting in Output" },
-      { count: 99, stage_number: 4, status_text: "Rejected" },
-    ]);
-  };
+
+    const [statusDataCount, setStatusDataCount] = useState([])
+    useEffect(() => {
+        const today = new Date();
+        const formattedDate = today.toISOString().split("T")[0];
+        handleStatusApplyFilter(formattedDate, formattedDate);
+        handlePriorityApplyFilter('date');
+    }, [])
+
+    const handleStatusApplyFilter = async (fromDate: string, toDate: string) => {
+        //console.log("Filter applied:", fromDate, toDate);
+        const params: Record<string, string> = {};
+        if (fromDate) params.from_date = fromDate;
+        if (toDate) params.to_date = toDate;
+        const response = await getStatusWiseCount(params);
+        setStatusDataCount(response.data);
+    };
+
+
+    const [priorityDataCount, setPriorityDataCount] = useState<any[]>([]);
+    const handlePriorityApplyFilter = async (dateType: string,) => {
+        const params: Record<string, string> = {};
+        if (dateType) params.date_type = dateType;
+        const response = await getPriorityWiseCount(params);
+        setPriorityDataCount(response.data);
+    };
+
+  
 
 
   return (
     <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-      <LineChartCard sampleData={rawData} />
-      <BarChartCard sampleData={rawData} />
+      <LineChartCard
+        key={`priority-${JSON.stringify(priorityDataCount)}`}
+        sampleData={priorityDataCount}
+        headingText="Priority"
+        onApplyFilter={handlePriorityApplyFilter}
+      />
       <PieChartCard
+        key={`status-${JSON.stringify(statusDataCount)}`}
         sampleData={statusDataCount}
         labelKey="status_text"
         valueKey="count"
         headingText="Status"
         onApplyFilter={handleStatusApplyFilter}
       />
+      <BarChartCard sampleData={rawData} />
+      
       <BarChartCard sampleData={rawData1} />
     </div>
   );
