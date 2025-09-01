@@ -1,5 +1,6 @@
+// PieChartCard.tsx
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   PieChart,
   Pie,
@@ -9,7 +10,7 @@ import {
   ResponsiveContainer,
   LegendPayload,
 } from "recharts";
-import { Download } from "lucide-react";
+import { Download, Maximize, Minimize } from "lucide-react";
 
 interface PieChartCardProps {
   sampleData: any[];
@@ -52,6 +53,7 @@ const PieChartCard: React.FC<PieChartCardProps> = ({
 }) => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Build pieData dynamically
   const pieData = sampleData.map((item) => ({
@@ -63,13 +65,16 @@ const PieChartCard: React.FC<PieChartCardProps> = ({
   const COLORS = generateColors(pieData.length);
 
   // Initial visibility (all true)
-  const [visibility, setVisibility] = useState<Record<string, boolean>>(
-    () =>
-      pieData.reduce((acc, item) => {
-        acc[item.name] = true;
-        return acc;
-      }, {} as Record<string, boolean>)
-  );
+  const [visibility, setVisibility] = useState<Record<string, boolean>>({});
+
+  // Reset visibility whenever sampleData changes
+  useEffect(() => {
+    const initialVisibility = pieData.reduce((acc, item) => {
+      acc[item.name] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+    setVisibility(initialVisibility);
+  }, [sampleData]);
 
   // Toggle visibility
   const handleLegendClick = (dataKey?: string) => {
@@ -86,63 +91,91 @@ const PieChartCard: React.FC<PieChartCardProps> = ({
     value: visibility[item.name] ? item.value : 0,
   }));
 
+  // Chart UI (reusable for normal + fullscreen)
+  const ChartUI = (
+    <ResponsiveContainer width="100%" height={isFullscreen ? 500 : 300}>
+      <PieChart>
+        <Tooltip />
+        <Legend onClick={(e: LegendPayload) => handleLegendClick(e.value)} />
+        <Pie
+          data={filteredData}
+          dataKey="value"
+          nameKey="name"
+          outerRadius={isFullscreen ? 200 : 100}
+          label
+        >
+          {filteredData.map((_, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={COLORS[index % COLORS.length]}
+            />
+          ))}
+        </Pie>
+      </PieChart>
+    </ResponsiveContainer>
+  );
+
   return (
-    <div className="bg-white shadow-md rounded-2xl p-4">
-      {/* Header Row: Title + Download */}
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold">{headingText}</h2>
-        <button
-          onClick={() => downloadCSV(filteredData, `${headingText}.csv`)}
-          className="p-2 rounded hover:bg-gray-100"
-        >
-          <Download size={18} />
-        </button>
-      </div>
+    <>
+      <div className="bg-white shadow-md rounded-2xl p-4">
+        {/* Header Row: Title + Download + Zoom */}
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold">{headingText}</h2>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => downloadCSV(filteredData, `${headingText}.csv`)}
+              className="p-2 rounded hover:bg-gray-100"
+            >
+              <Download size={18} />
+            </button>
+            <button
+              onClick={() => setIsFullscreen(true)}
+              className="p-2 rounded hover:bg-gray-100"
+            >
+              <Maximize size={18} />
+            </button>
+          </div>
+        </div>
 
-      {/* Second Row: Filters */}
-      <div className="flex items-center space-x-2 mb-4">
-        <input
-          type="date"
-          value={fromDate}
-          onChange={(e) => setFromDate(e.target.value)}
-          className="border rounded px-2 py-1 text-sm"
-        />
-        <input
-          type="date"
-          value={toDate}
-          onChange={(e) => setToDate(e.target.value)}
-          className="border rounded px-2 py-1 text-sm"
-        />
-        <button
-          onClick={() => onApplyFilter(fromDate, toDate)}
-          className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-        >
-          Apply
-        </button>
-      </div>
-
-      {/* Chart */}
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Tooltip />
-          <Legend onClick={(e: LegendPayload) => handleLegendClick(e.value)} />
-          <Pie
-            data={filteredData}
-            dataKey="value"
-            nameKey="name"
-            outerRadius={100}
-            label
+        {/* Second Row: Filters */}
+        <div className="flex items-center space-x-2 mb-4">
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          />
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          />
+          <button
+            onClick={() => onApplyFilter(fromDate, toDate)}
+            className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
           >
-            {filteredData.map((_, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={COLORS[index % COLORS.length]}
-              />
-            ))}
-          </Pie>
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
+            Apply
+          </button>
+        </div>
+
+        {/* Chart */}
+        {ChartUI}
+      </div>
+
+      {/* Fullscreen Overlay */}
+      {isFullscreen && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="w-full h-[85%]"><button
+              onClick={() => setIsFullscreen(false)}
+              className="absolute top-3 right-3 p-2 rounded bg-gray-200"
+            >
+              <Minimize size={20} />
+            </button>{ChartUI}
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
