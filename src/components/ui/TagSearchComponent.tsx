@@ -31,7 +31,7 @@ const TagSearch: React.FC<TagSearchProps> = ({
 
   // Use only provided tags (no defaults)
   const allTags = useMemo(() => availableTags, [availableTags]);
-
+const selectedTagId = selectedTag?.id;
   // Filter tags effect with optimized dependencies
   useEffect(() => {
     if (searchTerm.trim()) {
@@ -42,19 +42,19 @@ const TagSearch: React.FC<TagSearchProps> = ({
           return false;
         }
         
-        return tagName.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          (!selectedTag || tag.id !== selectedTag.id);
+     return tagName.toLowerCase().includes(searchTerm.toLowerCase()) &&
+  (!selectedTagId || tag.id !== selectedTagId);
       });
       setFilteredTags(filtered);
     } else {
       // When no search term, show all available tags (excluding selected)
-      const unselectedTags = allTags.filter(tag => 
-        !selectedTag || tag.id !== selectedTag.id
-      );
+    const unselectedTags = allTags.filter(tag => 
+  !selectedTagId || tag.id !== selectedTagId
+);
       setFilteredTags(unselectedTags);
     }
     setHighlightedIndex(-1);
-  }, [searchTerm, allTags, selectedTag]);
+  }, [searchTerm, allTags, selectedTagId]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -207,7 +207,7 @@ const TagSearch: React.FC<TagSearchProps> = ({
             </>
           ) : searchTerm.trim() ? (
             <div className="px-4 py-2 text-sm text-gray-500">
-              No tags found matching "{searchTerm.trim()}"
+              No tags found matching {searchTerm.trim()}
             </div>
           ) : allTags.length === 0 ? (
             <div className="px-4 py-2 text-sm text-gray-500">

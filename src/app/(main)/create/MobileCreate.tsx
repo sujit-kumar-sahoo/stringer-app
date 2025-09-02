@@ -11,6 +11,7 @@ import { useCount } from '@/context/CountContext'
 import TagsSearch from "../../../components/ui/TagSearchComponent"
 import LocationSearch from "../../../components/ui/LocationSearchComponent"
 import { showAlert, showConfirmation } from "@/utils/alert";
+import { Loader2, Save, FileText, XCircle } from "lucide-react";
 interface FileWithMeta {
   file: File;
   previewUrl: string;
@@ -29,7 +30,7 @@ interface Tag {
 }
 
 function Create() {
-   const { refreshCounts } = useCount();
+  const { refreshCounts } = useCount();
   // Rich text editor state
   const [editorData, setEditorData] = useState<string>('')
   const [isEditorReady, setIsEditorReady] = useState(false)
@@ -40,16 +41,16 @@ function Create() {
 
   // Form fields state
   const [priority, setPriority] = useState('')
-  
+
   const [title, setTitle] = useState('')
   interface Location {
     id: string;
     name: string;
   }
- 
+
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
-   const [tagOptions, setTagOptions] = useState<Tag[]>([])
- const [isLoadingTags, setIsLoadingTags] = useState(true)
+  const [tagOptions, setTagOptions] = useState<Tag[]>([])
+  const [isLoadingTags, setIsLoadingTags] = useState(true)
 
 
   const [priorityOptions, setPriorityOptions] = useState<{ value: string, label: string }[]>([])
@@ -70,7 +71,7 @@ function Create() {
   const [contentTypeOptions, setContentTypeOptions] = useState<ContentType[]>([])
   const [isLoadingContentType, setIsLoadingContentType] = useState(true)
 
- 
+
 
 
   useEffect(() => {
@@ -160,29 +161,29 @@ function Create() {
         setIsLoadingLocations(false)
       }
     }
- const fetchTags = async () => {
-  try {
-    setIsLoadingTags(true) // ✅ Correct loading state
-    const response = await getTags()
+    const fetchTags = async () => {
+      try {
+        setIsLoadingTags(true) // ✅ Correct loading state
+        const response = await getTags()
 
-    if (response.success && response.data && Array.isArray(response.data)) {
-      const tags = response.data
-        .filter((item: any) => item.name && typeof item.name === 'string') // ✅ Correct field
-        .map((item: any) => ({
-          id: item.id.toString(),
-          name: item.name.trim() // ✅ Correct field name
-        }))
-      setTagOptions(tags) // ✅ Set correct state
-    } else {
-      console.error('Invalid tags response structure:', response) // ✅ Correct error message
+        if (response.success && response.data && Array.isArray(response.data)) {
+          const tags = response.data
+            .filter((item: any) => item.name && typeof item.name === 'string') // ✅ Correct field
+            .map((item: any) => ({
+              id: item.id.toString(),
+              name: item.name.trim() // ✅ Correct field name
+            }))
+          setTagOptions(tags) // ✅ Set correct state
+        } else {
+          console.error('Invalid tags response structure:', response) // ✅ Correct error message
+        }
+      } catch (error) {
+        console.error('Error fetching tags:', error) // ✅ Correct error message
+      } finally {
+        setIsLoadingTags(false) // ✅ Correct loading state
+      }
     }
-  } catch (error) {
-    console.error('Error fetching tags:', error) // ✅ Correct error message
-  } finally {
-    setIsLoadingTags(false) // ✅ Correct loading state
-  }
-}
-    
+
     fetchTags()
     fetchPriorities()
     fetchLocations()
@@ -302,14 +303,14 @@ function Create() {
   }*/
   const [loading, setLoading] = useState<null | "save" | "draft">(null);
   const isFormValid = priority &&
-                      selectedContentType &&
-                      selectedLocation?.name &&
-                      title &&
-                      editorData;
+    selectedContentType &&
+    selectedLocation?.name &&
+    title &&
+    editorData;
 
   const handleSubmit = async (action: 'save' | 'draft') => {
     setLoading(action); // 🔹 Start loader for clicked button
-    
+
     const attachment = files
       .filter((f) => f.uploadedUrl)
       .map((f) => ({ url: f.uploadedUrl }));
@@ -350,18 +351,18 @@ function Create() {
 
   const handleCancel = () => {
     //if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
-      setPriority('')
-      setSelectedContentType('')
-      setTitle('')
-      setSelectedLocation(null)
-      setEditorData('')
-      setSelectedTag(null)
-      setFiles([])
-      if (editorRef.current) {
-        editorRef.current.innerHTML = ''
-      }
-      setIsEmpty(true)
+    setPriority('')
+    setSelectedContentType('')
+    setTitle('')
+    setSelectedLocation(null)
+    setEditorData('')
+    setSelectedTag(null)
+    setFiles([])
+    if (editorRef.current) {
+      editorRef.current.innerHTML = ''
     }
+    setIsEmpty(true)
+  }
   //}
 
   const ToolbarButton: React.FC<{
@@ -522,10 +523,10 @@ function Create() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sticky Header - Fixed positioning and padding */}
-      <div className="sticky top-0 z-20 bg-gray-50 p-4 flex-shrink-0">
+      <div className="sticky top-0 z-20 bg-gray-50 flex-shrink-0">
         <div>
           <div className="bg-white rounded-lg shadow-sm border p-4">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex justify-between gap-1">
               {/* Title */}
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">Add Story</h1>
@@ -533,44 +534,19 @@ function Create() {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-3">
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
+
                 <button
                   onClick={() => handleSubmit("draft")}
                   disabled={!isFormValid || loading !== null}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${
-                    isFormValid && !loading
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-green-400 cursor-not-allowed"
-                  }`}
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${isFormValid && !loading
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-green-400 cursor-not-allowed"
+                    }`}
                 >
                   {loading === "draft" ? (
-                    <svg
-                      className="animate-spin h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      ></path>
-                    </svg>
+                    <Loader2 className="animate-spin h-4 w-4 text-white" />
                   ) : (
-                    "Draft Story"
+                    <FileText className="h-4 w-4" />
                   )}
                 </button>
 
@@ -578,38 +554,24 @@ function Create() {
                 <button
                   onClick={() => handleSubmit("save")}
                   disabled={!isFormValid || loading !== null}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${
-                    isFormValid && !loading
-                      ? "bg-blue-600 hover:bg-blue-700"
-                      : "bg-blue-400 cursor-not-allowed"
-                  }`}
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${isFormValid && !loading
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "bg-blue-400 cursor-not-allowed"
+                    }`}
                 >
                   {loading === "save" ? (
-                    <svg
-                      className="animate-spin h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      ></path>
-                    </svg>
+                    <Loader2 className="animate-spin h-4 w-4 text-white" />
                   ) : (
-                    "Create Story"
+                    <Save className="h-4 w-4" />
                   )}
                 </button>
-                
+                <button
+                  onClick={handleCancel}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                >
+                  <XCircle className="h-4 w-4" />
+                </button>
+
               </div>
             </div>
           </div>
@@ -617,7 +579,7 @@ function Create() {
       </div>
 
       {/* Content Area - Added proper padding and margin */}
-      <div className="flex-1 py-2 px-4 overflow-auto">
+      <div className="flex-1 py-2  overflow-auto">
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
           {/* Form Fields */}
           <div className="p-6 border-b border-gray-200">
@@ -664,7 +626,7 @@ function Create() {
                     </option>
                   ))}
                 </select>
-               
+
               </div>
             </div>
 
@@ -680,13 +642,13 @@ function Create() {
               />
 
 
-             <TagsSearch
-  selectedTag={selectedTag}
-  onTagChange={setSelectedTag}
-  availableTags={tagOptions}
-  isLoading={isLoadingTags} 
-  placeholder="Choose a tag..."
-/>
+              <TagsSearch
+                selectedTag={selectedTag}
+                onTagChange={setSelectedTag}
+                availableTags={tagOptions}
+                isLoading={isLoadingTags}
+                placeholder="Choose a tag..."
+              />
 
             </div>
             <div>
@@ -859,7 +821,7 @@ function Create() {
               onKeyUp={updateActiveFormats}
               onClick={updateActiveFormats}
               suppressContentEditableWarning={true}
-              className="min-h-[200px] p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="min-h-[200px] border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               style={{
                 fontSize: '14px',
                 lineHeight: '1.6',
