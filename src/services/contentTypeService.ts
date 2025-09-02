@@ -26,17 +26,15 @@ export const getContentTypes = async (): Promise<ApiResponse> => {
   }
 };
 
-export const addContentTypes = async (formData: { content_type: string }): Promise<ApiResponse> => {
+export const addContentTypes = async  (formData: any): Promise<ApiResponse> => {
   try {
   
-    const cleanData = {
-      content_type: formData.content_type
-    };
-
    
-    const response = await api.post('/api/content_type/', cleanData, {
+   
+    const response = await api.post('/api/content_type/',  {
       headers: {
         'Content-Type': 'application/json',
+        formData,
       },
     });
 

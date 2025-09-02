@@ -21,7 +21,7 @@ interface FileWithMeta {
 interface Tag {
   id: string;
   name: string;
-    selectedTag: Tag | null;
+  selectedTag: Tag | null;
   onTagChange: (tag: Tag | null) => void;
   availableTags: Tag[];
   isLoading?: boolean;

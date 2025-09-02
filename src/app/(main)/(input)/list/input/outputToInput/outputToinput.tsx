@@ -5,8 +5,8 @@ const OutputToInputpage: React.FC = () => {
   return (
     <ActivityListing 
       status={11} 
-      countKey="draft" 
-      title="draft"
+      countKey="outputToInput" 
+      title="outputToInput"
     />
   )
 }

@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  LucideIcon,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -14,12 +13,10 @@ import {
 import { useSidebar } from '../../../context/SidebarContext';
 import { useCount } from '../../../context/CountContext';
 
-// Import constants and types
+
 import { 
   MAIN_MENU_ITEMS,
   MenuItem,
-  SubMenuItem,
-  ColorType,
   getColorClasses,
   getActiveIndicatorClasses 
 } from '@/constants/menuItems';
@@ -239,6 +236,7 @@ const DesktopSidebar: React.FC = () => {
       shadow-2xl
       h-screen
       relative
+      flex flex-col
       ${isOpen ? 'w-72' : 'w-20'}
     `}>
       {/* Toggle button */}
@@ -254,11 +252,16 @@ const DesktopSidebar: React.FC = () => {
         )}
       </button>
       
-      {/* Navigation */}
+      {/* Navigation - Made scrollable */}
       <nav className={`
-        flex-1 transition-all duration-300 h-full
-        ${isOpen ? 'p-6 overflow-y-auto' : 'p-4 overflow-hidden'}
-      `}>
+        flex-1 overflow-y-auto overflow-x-hidden
+        ${isOpen ? 'px-6 py-6' : 'px-4 py-4'}
+        scrollbar-hide
+      `} 
+      style={{
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none'
+      }}>
         <div>
           <SectionHeader title="Main" action isMinimized={!isOpen} />
           <div className="space-y-2">
@@ -274,17 +277,32 @@ const DesktopSidebar: React.FC = () => {
             ))}
           </div>
         </div>
+        
+        {/* Bottom spacing to prevent overlap with refresh button */}
+        <div className="h-16"></div>
       </nav>
 
-      {/* Sticky Refresh Button */}
-      <button 
-        onClick={handleRefreshCounts}
-        disabled={isLoading}
-        className="fixed bottom-[7rem] left-[3rem] z-50 p-2 bg-orange-500 hover:bg-orange-400 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 hover:scale-110"
-        title="Refresh counts"
-      >
-        <RefreshCw className={`w-5 h-5 text-white ${isLoading ? 'animate-spin' : ''}`} />
-      </button>
+      {/* Refresh Button - Fixed at bottom */}
+      <div className={`
+        ${isOpen ? 'p-6 pt-0' : 'p-4 pt-0'}
+        border-t border-slate-700/50
+        bg-gradient-to-t from-slate-900 to-transparent
+      `}>
+        <button 
+          onClick={handleRefreshCounts}
+          disabled={isLoading}
+          className={`
+            w-full p-3 bg-orange-500 hover:bg-orange-400 rounded-lg shadow-lg 
+            hover:shadow-xl transition-all duration-300 disabled:opacity-50 
+            hover:scale-105 flex items-center justify-center space-x-2
+            ${!isOpen ? 'px-2' : ''}
+          `}
+          title="Refresh counts"
+        >
+          <RefreshCw className={`w-5 h-5 text-white ${isLoading ? 'animate-spin' : ''}`} />
+          {isOpen && <span className="text-white font-medium">Refresh</span>}
+        </button>
+      </div>
     </div>
   );
 };

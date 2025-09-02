@@ -6,7 +6,7 @@ const WipPage: React.FC = () => {
     <ActivityListing 
       status={9} 
       countKey="inputWip" 
-      title="Wait List"
+      title="inputWip"
     />
   )
 }

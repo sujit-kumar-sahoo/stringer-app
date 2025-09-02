@@ -5,8 +5,8 @@ const InputToStringerpage: React.FC = () => {
   return (
     <ActivityListing 
       status={7} 
-      countKey="draft" 
-      title="draft"
+      countKey="inputToStringer" 
+      title="inputToStringer"
     />
   )
 }

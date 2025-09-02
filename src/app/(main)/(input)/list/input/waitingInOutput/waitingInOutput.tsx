@@ -5,7 +5,7 @@ const WaitingInOutputpage: React.FC = () => {
   return (
     <ActivityListing 
       status={3} 
-      countKey="draft" 
+      countKey="waitingInOutput" 
       title="draft"
     />
   )

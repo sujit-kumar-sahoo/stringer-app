@@ -33,13 +33,12 @@ const ContentTypeForm: React.FC = () => {
           id: apiContentType.id.toString(),
           name: apiContentType.content_type.trim()
         }));
-        // Sort by ID descending to show newest first (assuming higher ID = newer)
+        // Sort by ID descending to show newest first
         const sortedContentTypes = convertedContentTypes.sort((a, b) => parseInt(b.id) - parseInt(a.id));
         setContentTypes(sortedContentTypes);
       }
     } catch (err: any) {
-      // Error handling without UI display - could log to console if needed
-      console.log('Failed to load content types');
+      console.log('Failed to load content types:', err?.message || 'Unknown error');
     } finally {
       setIsLoadingContentTypes(false);
     }
@@ -49,7 +48,7 @@ const ContentTypeForm: React.FC = () => {
     e.preventDefault();
     
     if (!currentContentType.trim()) {
-      return; // Just return without showing error
+      return;
     }
 
     // Check if content type already exists
@@ -70,53 +69,37 @@ const ContentTypeForm: React.FC = () => {
       const contentTypeName = currentContentType.trim();
       const response = await addContentTypes({ content_type: contentTypeName });
       
-      // Debug: Log the response to understand its structure
       console.log('API Response:', response);
       
       let newContentType: ContentType | null = null;
       
-      // Handle different response formats with proper null checks
-      if (response.success && response.data) {
-        // Standard success response
-        const apiContentType = response.data;
-        console.log('API Content Type data:', apiContentType);
-        
-        if (apiContentType && apiContentType.id && apiContentType.content_type) {
-          newContentType = {
-            id: apiContentType.id.toString(),
-            name: apiContentType.content_type.trim()
-          };
-        }
-      } else if ((response as any).id && (response as any).content_type) {
-        // Direct response format
-        console.log('Direct response format:', response);
-        newContentType = {
-          id: (response as any).id.toString(),
-          name: (response as any).content_type.trim()
-        };
-      } else {
-        // Try to handle other possible formats
-        console.log('Checking alternative response formats...');
-        
-        // Maybe the API returns the content type data directly
-        if ((response as any).id && ((response as any).name || (response as any).content_type_name)) {
+      // Handle different response formats with better error checking
+      if (response && typeof response === 'object') {
+        if (response.success && response.data) {
+          // Standard success response
+          const apiContentType = response.data;
+          
+          if (apiContentType?.id && apiContentType?.content_type) {
+            newContentType = {
+              id: apiContentType.id.toString(),
+              name: apiContentType.content_type.trim()
+            };
+          }
+        } else if ((response as any).id && (response as any).content_type) {
+          // Direct response format
           newContentType = {
             id: (response as any).id.toString(),
-            name: ((response as any).name || (response as any).content_type_name).trim()
+            name: (response as any).content_type.trim()
           };
-        }
-        // Or maybe it's nested differently
-        else if ((response as any).contentType && (response as any).contentType.id && (response as any).contentType.content_type) {
+        } else if ((response as any).id && (response as any).name) {
+          // Alternative field name
           newContentType = {
-            id: (response as any).contentType.id.toString(),
-            name: (response as any).contentType.content_type.trim()
+            id: (response as any).id.toString(),
+            name: (response as any).name.trim()
           };
-        }
-        // If all else fails, create a temporary content type and refresh
-        else if ((response as any).id || (response as any).success) {
-          console.log('Creating temporary content type, will refresh to get actual data');
-          // If we know it was successful but can't parse the response,
-          // clear the form and refresh the content types
+        } else if ((response as any).success !== false) {
+          // If we can't parse but it's not explicitly failed, assume success and refresh
+          console.log('Assuming success, will refresh to get actual data');
           setCurrentContentType('');
           setSuccessMessage('Content type added successfully! Refreshing list...');
           setTimeout(() => {
@@ -128,7 +111,7 @@ const ContentTypeForm: React.FC = () => {
       }
       
       if (newContentType) {
-        // Add to local state immediately at the beginning of the array
+        // Add to local state immediately at the beginning
         setContentTypes(prev => [newContentType!, ...prev]);
         setCurrentContentType('');
         setSuccessMessage(`Content type "${newContentType.name}" added successfully!`);
@@ -137,17 +120,20 @@ const ContentTypeForm: React.FC = () => {
         setTimeout(() => setSuccessMessage(''), 3000);
       } else {
         console.log('Could not parse content type from response, refreshing list');
-        // Clear the input field even if we couldn't parse the response
         setCurrentContentType('');
-        // Auto-refresh after a short delay
         setTimeout(() => {
           loadContentTypes();
         }, 2000);
       }
       
     } catch (err: any) {
-      console.log('Error adding content type:', err);
-      // Just continue without showing error to user
+      console.log('Error adding content type:', err?.message || 'Unknown error');
+      
+      // Show a generic error message to the user only if it's a network/serious error
+      if (err?.name === 'NetworkError' || err?.message?.includes('fetch')) {
+        setError('Network error. Please check your connection and try again.');
+      }
+      // For other errors, just log and continue
     } finally {
       setIsLoading(false);
     }
@@ -161,6 +147,8 @@ const ContentTypeForm: React.FC = () => {
 
   const handleRefresh = () => {
     loadContentTypes();
+    setError('');
+    setSuccessMessage('');
   };
 
   return (
@@ -218,7 +206,7 @@ const ContentTypeForm: React.FC = () => {
           </h3>
           
           <div className="space-y-4">
-            {/* Error Message - Only for duplicate content types */}
+            {/* Error Message */}
             {error && (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -279,7 +267,7 @@ const ContentTypeForm: React.FC = () => {
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <p className="text-sm text-gray-600 mb-2">Quick view:</p>
                 <div className="flex flex-wrap gap-2">
-                  {contentTypes.slice(0, 6).map((contentType) => (
+                  {contentTypes.slice(0, 8).map((contentType) => (
                     <span
                       key={contentType.id}
                       className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm"
@@ -288,9 +276,9 @@ const ContentTypeForm: React.FC = () => {
                       {contentType.name}
                     </span>
                   ))}
-                  {contentTypes.length > 6 && (
-                    <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-sm">
-                      +{contentTypes.length - 6} more
+                  {contentTypes.length > 8 && (
+                    <span className="text-xs text-gray-500 px-2 py-1">
+                      +{contentTypes.length - 8} more...
                     </span>
                   )}
                 </div>

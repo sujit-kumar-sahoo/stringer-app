@@ -12,7 +12,7 @@ import { fetchActivities, Activity, FetchActivitiesParams } from '@/services/pag
 
 interface ActivityListingProps {
   status: number;
-  countKey: 'waitList' | 'inputWIP' | 'inputToStringer' | 'outputToInput' | 'published' | 'draft';
+  countKey: 'waitList' | 'inputWIP' | 'inputToStringer' | 'outputToInput' | 'published' | 'draft' | 'waitingInOutput';
   title?: string;
 }
 
@@ -140,9 +140,29 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+
   const applySearch = () => {
-    setAppliedSearchTerm(searchTerm)
-    loadActivities(1)
+    const currentSearchTerm = searchTerm.trim();
+    setAppliedSearchTerm(currentSearchTerm);
+
+
+    const params = {
+      page: 1,
+      limit,
+      appliedSearchTerm: currentSearchTerm,
+      dateFrom,
+      dateTo,
+      selectedLocations,
+      selectedPriorities,
+      status
+    };
+
+    fetchActivities(params).then(data => {
+      setActivities(data.results);
+      setTotalRecords(data.total_records);
+      setCurrentPage(1);
+      updateCount(countKey, data.total_records);
+    });
   }
 
   const clearFilters = async () => {
@@ -228,26 +248,26 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
     })
   }
 
-const calculateWaitingTime = (createdDate: string) => {
-  const created = new Date(createdDate)
-  const now = new Date()
-  const diffMs = now.getTime() - created.getTime()
+  const calculateWaitingTime = (createdDate: string) => {
+    const created = new Date(createdDate)
+    const now = new Date()
+    const diffMs = now.getTime() - created.getTime()
 
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
 
-  if (days > 0) {
-    // When showing days, only show days and hours (no minutes)
-    return `${days} d, ${hours} hr`
-  } else if (hours > 0) {
-    // When showing hours, show hours and minutes
-    return `${hours} hr, ${minutes} min`
-  } else {
-    // When less than an hour, show only minutes
-    return `${minutes} min`
+    if (days > 0) {
+      // When showing days, only show days and hours (no minutes)
+      return `${days} d, ${hours} hr`
+    } else if (hours > 0) {
+      // When showing hours, show hours and minutes
+      return `${hours} hr, ${minutes} min`
+    } else {
+      // When less than an hour, show only minutes
+      return `${minutes} min`
+    }
   }
-}
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -510,7 +530,12 @@ const calculateWaitingTime = (createdDate: string) => {
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && hasActiveFilters() && applySearch()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            applySearch();
+                          }
+                        }}
                         placeholder="Search stories..."
                         className="pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-64 bg-white"
                       />
@@ -556,7 +581,7 @@ const calculateWaitingTime = (createdDate: string) => {
         <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
           {activities.map((activity) => {
             const waitingTime = calculateWaitingTime(activity.created_date)
-            
+
             const cardContent = (
               <>
                 {activity.status_text && activity.status_text.trim() !== '' ? (
@@ -585,7 +610,7 @@ const calculateWaitingTime = (createdDate: string) => {
                     </div>
                     <div
                       style={{
-                        backgroundColor:"#a4170c",
+                        backgroundColor: "#a4170c",
                         color: "#fff",
                         paddingTop: "0.35rem",
                         paddingBottom: "0.35rem",
@@ -627,7 +652,7 @@ const calculateWaitingTime = (createdDate: string) => {
                       </div>
                     </div>
                   </div>
-                   <h3
+                  <h3
                     className="font-semibold text-gray-900 text-base leading-tight"
                     style={{
                       minHeight: "80px",
@@ -723,19 +748,19 @@ const calculateWaitingTime = (createdDate: string) => {
           </div>
         )}
         {totalRecords > 0 && (
-        <div className="fixed bottom-5 right-0 transform  z-50 max-w-7xl w-full flex justify-center pointer-events-none">
-          <div className="pointer-events-auto">
-            <Pagination
-              offset={(currentPage - 1) * limit}
-              totalRecords={totalRecords}
-              limit={limit}
-              onPageChange={handlePageChange}
-            />
+          <div className="fixed bottom-5 right-0 transform  z-50 max-w-7xl w-full flex justify-center pointer-events-none">
+            <div className="pointer-events-auto">
+              <Pagination
+                offset={(currentPage - 1) * limit}
+                totalRecords={totalRecords}
+                limit={limit}
+                onPageChange={handlePageChange}
+              />
+            </div>
           </div>
-        </div>
         )}
       </div>
- 
+
 
     </div>
   )

@@ -42,15 +42,15 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         className="flex items-center justify-between space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 min-w-[140px] transition-colors"
         disabled={isLoading}
       >
-        <span className="truncate">
-          {isLoading
-            ? 'Loading...'
-            : selectedItems.length === 0
-            ? label
-            : selectedItems.length === 1
-            ? options.find(opt => opt[idKey] === selectedItems[0])?.[displayKey] || ''
-            : `${selectedItems.length} selected`}
-        </span>
+      <span className="truncate">
+      {isLoading
+        ? 'Loading...'
+        : (selectedItems?.length === 0) // Add optional chaining
+        ? label
+        : (selectedItems?.length === 1)
+        ? options.find(opt => opt[idKey] === selectedItems[0])?.[displayKey] || ''
+        : `${selectedItems?.length} selected`}
+    </span>
         <ChevronDown 
           size={16} 
           className={`transition-transform duration-200 ${
