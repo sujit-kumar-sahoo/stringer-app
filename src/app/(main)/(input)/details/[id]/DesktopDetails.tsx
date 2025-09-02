@@ -275,13 +275,8 @@ const DesktopStoryDetailView: React.FC = () => {
     }
   }
 
-  const handleReturnToReporter = () => {
-    alert('Returning to reporter...')
-  }
 
-  const handleShare = () => {
-    alert('Share functionality...')
-  }
+
 
 
   useEffect(() => {
@@ -299,6 +294,45 @@ const DesktopStoryDetailView: React.FC = () => {
     }
   }, [showVersionDropdown])
 
+  const handleReturnToReporter = async () => {
+    try {
+      // Example API call
+      const param = {status:"7"}
+      const response = await updateContentStatus(id, param)
+      const data = response.data
+      router.push(`/list/input/waitList`);
+      /*if (response.data.success) {
+        // Redirect after success
+        await refreshCounts();
+        router.push(`/update/${id}`);
+      } else {
+        alert("Something went wrong!");
+      }*/
+    } catch (error: any) {
+      console.error("Error:", error);
+      alert("Failed to process request.");
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      // Example API call
+      const param = {status:"3"}
+      const response = await updateContentStatus(id, param)
+      const data = response.data
+      router.push(`/list/input/waitingInOutput`);
+      /*if (response.data.success) {
+        // Redirect after success
+        await refreshCounts();
+        router.push(`/update/${id}`);
+      } else {
+        alert("Something went wrong!");
+      }*/
+    } catch (error: any) {
+      console.error("Error:", error);
+      alert("Failed to process request.");
+    }
+  }
 
   const handleLockEdit = async () => {
     try {
@@ -469,7 +503,7 @@ const DesktopStoryDetailView: React.FC = () => {
                   onClick={handleShare}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium transition-colors"
                 >
-                  SHARE
+                  MOVE TO OUTPUT
                 </button>
               </div>
             </div>
