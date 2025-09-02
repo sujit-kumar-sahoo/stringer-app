@@ -175,3 +175,29 @@ export const getPriorityWiseCount = async (
       };
     }
 };
+
+export const updateContentStatus = async (
+  id: any,
+  params?: Record<string, string>
+): Promise<ApiResponse> => {
+  try {
+    const response = await api.put(`/api/content/${id}/status`, params, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message:
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        "Error updating content status.",
+    };
+  }
+};

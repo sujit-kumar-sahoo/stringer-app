@@ -1,10 +1,12 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
-import { PenTool, User, ChevronDown, MapPin, Image, Video, File } from 'lucide-react'
+import { Lock, PenTool, User, ChevronDown, MapPin, Image, Video, File } from 'lucide-react'
 import withAuth from '@/hoc/withAuth';
-import { getContentById, getContentByVersionId } from '@/services/contentService';
+import { getContentById, getContentByVersionId, updateContentStatus } from '@/services/contentService';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useRouter } from "next/navigation";
+import { useCount } from '@/context/CountContext'
 
 interface StoryData {
   activities: Array<{
@@ -26,6 +28,8 @@ interface Attachment {
 }
 
 const DesktopStoryDetailView: React.FC = () => {
+  const { refreshCounts } = useCount();
+  const router = useRouter();
   const { id } = useParams() || {};
 
   const [activeTab, setActiveTab] = useState<'overview' | 'attachments' | 'activities'>('overview')
@@ -295,6 +299,28 @@ const DesktopStoryDetailView: React.FC = () => {
     }
   }, [showVersionDropdown])
 
+
+  const handleLockEdit = async () => {
+    try {
+      // Example API call
+      const param = {status:"9"}
+      const response = await updateContentStatus(id, param)
+      const data = response.data
+      router.push(`/update/${id}`);
+      /*if (response.data.success) {
+        // Redirect after success
+        await refreshCounts();
+        router.push(`/update/${id}`);
+      } else {
+        alert("Something went wrong!");
+      }*/
+    } catch (error: any) {
+      console.error("Error:", error);
+      alert("Failed to process request.");
+    }
+  };
+
+
   return (
     <div className="w-full bg-gray-50 h-screen overflow-hidden flex flex-col">
       <style jsx>{`
@@ -378,13 +404,20 @@ const DesktopStoryDetailView: React.FC = () => {
                   )}
                 </div>
 
-                {selectedVersion === version ? (
-                  <Link
-                    href={`/update/${id}`}
-                    className="p-2 text-blue-600 hover:text-blue-800 bg-blue-200 hover:bg-blue-50 border-2 border-blue-500 rounded-md transition-colors ml-4 inline-block"
+                {String(selectedVersion) === String(version) ? (
+                  <button
+                    type="button"
+                    onClick={handleLockEdit}
+                    className="relative group p-2 text-blue-600 hover:text-blue-800 bg-blue-200 hover:bg-blue-50 border-2 border-blue-500 rounded-md transition-colors ml-4 inline-flex items-center gap-1"
                   >
+                    <Lock size={16} />
                     <PenTool size={16} />
-                  </Link>
+
+                    {/* Tooltip */}
+                    <span className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                      Lock & Edit
+                    </span>
+                  </button>
                 ) : (
                   <div className="p-2 text-gray-400 bg-gray-100 border-2 border-gray-300 rounded-md ml-4 inline-block cursor-not-allowed">
                     <PenTool size={16} />
