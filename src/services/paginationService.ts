@@ -26,9 +26,9 @@ export interface ApiResponse {
 }
 
 export interface FetchActivitiesParams {
-  page: number
-  limit: number
-  status: number 
+  page: number;
+  limit: number;
+  status: number;
   appliedSearchTerm?: string
   dateFrom?: string
   dateTo?: string

@@ -1,10 +1,10 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
-import { Lock, PenTool, User, ChevronDown, MapPin, Image, Video, File } from 'lucide-react'
+import { Lock, PenTool, User, ChevronDown, MapPin, Image as ImageIcon, Video, File } from 'lucide-react'
 import withAuth from '@/hoc/withAuth';
 import { getContentById, getContentByVersionId, updateContentStatus } from '@/services/contentService';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
+
 import { useRouter } from "next/navigation";
 import { useCount } from '@/context/CountContext'
 
@@ -30,7 +30,8 @@ interface Attachment {
 const DesktopStoryDetailView: React.FC = () => {
   const { refreshCounts } = useCount();
   const router = useRouter();
-  const { id } = useParams() || {};
+  const params = useParams();
+const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const [activeTab, setActiveTab] = useState<'overview' | 'attachments' | 'activities'>('overview')
 
@@ -164,7 +165,7 @@ const DesktopStoryDetailView: React.FC = () => {
 
 
   const getFileIcon = (mime: string) => {
-    if (isImage(mime)) return <Image size={48} className="text-blue-400" />
+    if (isImage(mime)) return <ImageIcon size={48} className="text-blue-400" />
     if (isVideo(mime)) return <Video size={48} className="text-purple-400" />
     return <File size={48} className="text-gray-400" />
   }
@@ -294,65 +295,50 @@ const DesktopStoryDetailView: React.FC = () => {
     }
   }, [showVersionDropdown])
 
-  const handleReturnToReporter = async () => {
-    try {
-      // Example API call
-      const param = {status:"7"}
-      const response = await updateContentStatus(id, param)
-      const data = response.data
+const handleReturnToReporter = async () => {
+  try {
+    const param = { status: "7" };
+    const response = await updateContentStatus(id, param);
+    
+    if (response?.data?.success === true) {
+      await refreshCounts();
+      router.push(`/update/${id}`);
+    } else {
+      // No alert - just redirect
       router.push(`/list/input/waitList`);
-      /*if (response.data.success) {
-        // Redirect after success
-        await refreshCounts();
-        router.push(`/update/${id}`);
-      } else {
-        alert("Something went wrong!");
-      }*/
-    } catch (error: any) {
-      console.error("Error:", error);
-      alert("Failed to process request.");
     }
-  };
+  } catch (error: any) {
+    console.error("Error:", error);
+    // No alert - just redirect
+    router.push(`/list/input/waitList`);
+  }
+};
 
   const handleShare = async () => {
-    try {
-      // Example API call
-      const param = {status:"3"}
-      const response = await updateContentStatus(id, param)
-      const data = response.data
-      router.push(`/list/input/waitingInOutput`);
-      /*if (response.data.success) {
-        // Redirect after success
-        await refreshCounts();
-        router.push(`/update/${id}`);
-      } else {
-        alert("Something went wrong!");
-      }*/
-    } catch (error: any) {
-      console.error("Error:", error);
-      alert("Failed to process request.");
-    }
+  try {
+    const param = { status: "3" };
+    await updateContentStatus(id, param);
+    await refreshCounts();
+    router.push(`/list/input/waitingInOutput`);
+  } catch (error: any) {
+    console.error("Error:", error);
+    // No alert - just redirect to a fallback page or stay on current page
+    router.push(`/list/input/waitingInOutput`);
   }
+};
 
-  const handleLockEdit = async () => {
-    try {
-      // Example API call
-      const param = {status:"9"}
-      const response = await updateContentStatus(id, param)
-      const data = response.data
-      router.push(`/update/${id}`);
-      /*if (response.data.success) {
-        // Redirect after success
-        await refreshCounts();
-        router.push(`/update/${id}`);
-      } else {
-        alert("Something went wrong!");
-      }*/
-    } catch (error: any) {
-      console.error("Error:", error);
-      alert("Failed to process request.");
-    }
-  };
+const handleLockEdit = async () => {
+  try {
+    const param = { status: "9" };
+    await updateContentStatus(id, param);
+    await refreshCounts();
+    router.push(`/update/${id}`);
+  } catch (error: any) {
+    console.error("Error:", error);
+    // No alert - just redirect to update page anyway
+    router.push(`/update/${id}`);
+  }
+};
 
 
   return (

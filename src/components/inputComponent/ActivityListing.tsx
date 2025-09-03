@@ -1,25 +1,26 @@
 'use client'
+
 import withAuth from '@/hoc/withAuth';
 import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown';
 import { getPriorities } from '@/services/priorityService';
 import { getLocations } from '@/services/locationService';
-import { useCount } from '@/context/CountContext';
+import { useCount , CountData} from '@/context/CountContext';
 import Link from 'next/link'
 import React, { useState, useEffect } from 'react'
-import { ChevronDown, Search, Grid3X3, List, MapPin, Clock, FileText, AlertCircle, Image, Video, Headphones, File, Lock, Calendar, X } from 'lucide-react'
+import { ChevronDown, Search, Grid3X3, List, MapPin, Clock, FileText, AlertCircle, Image, Video, Headphones, File, Lock, Calendar, X , Image as ImageIcon} from 'lucide-react'
 import Pagination from '@/components/ui/pagination';
 import { fetchActivities, Activity, FetchActivitiesParams } from '@/services/paginationService';
 
 interface ActivityListingProps {
-  status: number;
-  countKey: 'waitList' | 'inputWIP' | 'inputToStringer' | 'outputToInput' | 'published' | 'draft' | 'waitingInOutput';
+  status: any;
+  countKey: keyof CountData; 
   title?: string;
 }
 
 const ActivityListing: React.FC<ActivityListingProps> = ({
   status,
-  countKey,
-  title = 'Activities'
+  countKey
+ 
 }) => {
   const { updateCount } = useCount();
   const [searchTerm, setSearchTerm] = useState('')
@@ -36,7 +37,7 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
   const [totalRecords, setTotalRecords] = useState(0)
   const [limit] = useState(12)
   const [error, setError] = useState<string | null>(null)
-  const [locationOptions, setLocationOptions] = useState<string[]>([])
+  const [locationOptions, setLocationOptions] = useState<Array<{id: string, name: string}>>([])
   const [priorityOptions, setPriorityOptions] = useState<Array<Record<string, any>>>([])
   const [isLoadingLocations, setIsLoadingLocations] = useState(true)
   const [isLoadingPriorities, setIsLoadingPriorities] = useState(true)
@@ -290,7 +291,7 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
     switch (fileType) {
       case 'image':
         return <div className={`${baseStyle} bg-green-500`}>
-          <Image size={10} />
+        <ImageIcon size={10} />
         </div>
       case 'video':
         return <div className={`${baseStyle} bg-blue-500`}>
@@ -629,7 +630,7 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
                           lineHeight: "0.76",
                           fontWeight: 500
                         }}>
-                        Locked
+                        Locked by
                       </span>
                     </div>
                   </div>
@@ -723,7 +724,7 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
             return (
               <div key={activity.id}>
                 {activity.locked ? (
-                  <div className={`bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-all duration-200 overflow-hidden relative bg-gray-100`}>
+                  <div className={`bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-all duration-200 overflow-hidden relative`}>
                     {cardContent}
                   </div>
                 ) : (
@@ -766,4 +767,4 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
   )
 }
 
-export default withAuth(ActivityListing);
+export default withAuth(ActivityListing as any);

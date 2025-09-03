@@ -5,13 +5,14 @@ import { getPriorities } from '@/services/priorityService';
 import { getLocations } from '@/services/locationService';
 import { getContentTypes } from '@/services/contentTypeService';
 import { updateContent, getContentById } from '@/services/contentService';
-import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
+import { getPresignedUrl } from "@/services/uploadService";
 import { useCount } from '@/context/CountContext'
 import TagsSearch from "@/components/ui/TagSearchComponent"
 import LocationSearch from "@/components/ui/LocationSearchComponent"
-import { showAlert, showConfirmation } from "@/utils/alert";
+import { showAlert } from "@/utils/alert";
 import { useParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
+
+import Image from 'next/image'
 interface FileWithMeta {
   file: File;
   previewUrl: string;
@@ -32,7 +33,7 @@ interface Attachment {
 
 function UpdateForm() {
   const { id } = useParams() || {};
-  const { refreshCounts } = useCount();
+  //const { refreshCounts } = useCount();
   // text editor state
   const [editorData, setEditorData] = useState<string>('')
   const [isEditorReady, setIsEditorReady] = useState(false)
@@ -71,7 +72,7 @@ function UpdateForm() {
   }
   const [selectedContentType, setSelectedContentType] = useState('')
   const [contentTypeOptions, setContentTypeOptions] = useState<ContentType[]>([])
-  const [isLoadingContentType, setIsLoadingContentType] = useState(true)
+  //const [isLoadingContentType, setIsLoadingContentType] = useState(true)
 
  
 
@@ -337,7 +338,7 @@ function UpdateForm() {
                       editorData;
 
   const handleSubmit = async (action: 'save' | 'draft') => {
-    setLoading(action); // 🔹 Start loader for clicked button
+    setLoading(action); 
     
     const attachment = files
       .filter((f) => f.uploadedUrl)
@@ -346,8 +347,7 @@ function UpdateForm() {
     const status = action === 'save' ? 2 : 1;
 
     try {
-      //const formData = new FormData();
-      //formData.append('username', username);
+      
       const formData = {
         priority,
         content_type: selectedContentType,
@@ -362,23 +362,21 @@ function UpdateForm() {
       const authResult = await updateContent(formData, id);
 
       if (authResult.success) {
-        //handleCancel();
+        
         showAlert("Success", "Update successfully!", "success");
-        //await refreshCounts();
-        // ✅ Update auth context immediately
+        
       } else {
-        // setError(authResult?.message || 'Invalid credentials.');
-        // setLoading(false);
+        
       }
     } catch (error: any) {
       console.error(error?.message || "Submit failed.");
     } finally {
-      setLoading(null); // 🔹 Stop loader after API call
+      setLoading(null);
     }
   };
 
   const handleCancel = () => {
-    //if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
+    
       setPriority('')
       setSelectedContentType('')
       setTitle('')
@@ -569,40 +567,7 @@ function UpdateForm() {
                 >
                   Cancel
                 </button>
-                {/*<button
-                  onClick={() => handleSubmit("draft")}
-                  disabled={!isFormValid || loading !== null}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${
-                    isFormValid && !loading
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-green-400 cursor-not-allowed"
-                  }`}
-                >
-                  {loading === "draft" ? (
-                    <svg
-                      className="animate-spin h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      ></path>
-                    </svg>
-                  ) : (
-                    "Draft Story"
-                  )}
-                </button>*/}
+
 
                 {/* Create Button */}
                 <button
@@ -938,11 +903,14 @@ function UpdateForm() {
                       <div key={eidx} className="relative flex items-center gap-4">
                         
                         {ef?.mime.startsWith('image') ? (
-                          <img
-                            src={`${process.env.NEXT_PUBLIC_CDN_URL}/${ef.path}`}
-                            alt="preview"
-                            className="h-16 w-16 rounded object-cover border border-gray-300"
-                          />
+                         <div className="relative h-16 w-16 rounded border border-gray-300 overflow-hidden">
+                            <img
+                              src={`${process.env.NEXT_PUBLIC_CDN_URL}/${ef.path}`}
+                              alt="preview"
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
                         ) : ef.mime.startsWith('video') ? (
                           <video
                             src={`${process.env.NEXT_PUBLIC_CDN_URL}/${ef.path}`}
@@ -1005,11 +973,13 @@ function UpdateForm() {
                         </button>
 
                         {f.file.type.startsWith('image') ? (
-                          <img
+                          <div className="relative h-16 w-16 rounded border border-gray-300 overflow-hidden">
+                            <img
                             src={f.previewUrl}
                             alt="preview"
                             className="h-16 w-16 rounded object-cover border border-gray-300"
                           />
+                          </div>
                         ) : f.file.type.startsWith('video') ? (
                           <video
                             src={f.previewUrl}
