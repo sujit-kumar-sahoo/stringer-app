@@ -98,7 +98,7 @@ export const LogoutComponent: React.FC = () => {
     setIsLogoutModalOpen(true);
   };
 
-  const confirmLogout = async (): void => {
+ const confirmLogout: () => Promise<void> = async () => {
     setIsLoggingOut(true);
     try {
       // Call API logout

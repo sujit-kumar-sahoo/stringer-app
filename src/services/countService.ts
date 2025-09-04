@@ -38,15 +38,14 @@ export const fetchCounts = async (): Promise<CountData> => {
 
    
     const mappedCounts = {
-        
-        waitList: Number(data['2']) || 0, 
-        inputWip: Number(data['9']) || 0,     
-        inputToStringer: Number(data['7']) || 0,
-        outputToInput: Number(data['11']) || 0,   
-        published: Number(data['5']) || 0,   
-
-
         draft: Number(data['1']) || 0,
+        waitList: Number(data['2']) || 0, 
+        waitingInOutput :Number(data['3'])|| 0,
+        published: Number(data['5']) || 0,    
+        inputToStringer: Number(data['7']) || 0,
+        inputWip: Number(data['9']) || 0,  
+        outputToInput: Number(data['11']) || 0,   
+         
     };
 
     return mappedCounts;

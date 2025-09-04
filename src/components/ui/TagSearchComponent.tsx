@@ -91,22 +91,15 @@ const TagSearch: React.FC<TagSearchProps> = ({
       e.preventDefault();
       if (highlightedIndex >= 0 && highlightedIndex < filteredTags.length) {
         selectTag(filteredTags[highlightedIndex]);
-      } else if (searchTerm.trim() && filteredTags.length === 0) {
-        // Create new tag
-        const newTag: Tag = {
-          id: Date.now().toString(),
-          name: searchTerm.trim()
-        };
-        selectTag(newTag);
       }
     } else if (e.key === 'Escape') {
       setIsDropdownOpen(false);
       setSearchTerm('');
     } else if (e.key === 'Backspace' && !searchTerm && selectedTag) {
-      // Clear selected tag when backspacing on empty input
+      
       clearTag();
     }
-  }, [highlightedIndex, filteredTags, searchTerm, selectTag, selectedTag, clearTag, isDropdownOpen]);
+  }, [highlightedIndex, filteredTags, selectTag, selectedTag, clearTag, isDropdownOpen]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -149,7 +142,7 @@ const TagSearch: React.FC<TagSearchProps> = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={handleInputFocus}
-          placeholder={selectedTag ? `Selected: ${selectedTag.name}` : placeholder}
+        
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         />
         
@@ -187,20 +180,6 @@ const TagSearch: React.FC<TagSearchProps> = ({
                 </button>
               ))}
             </>
-          ) : searchTerm.trim() ? (
-            <button
-              type="button"
-              onClick={() => {
-                const newTag: Tag = {
-                  id: Date.now().toString(),
-                  name: searchTerm.trim()
-                };
-                selectTag(newTag);
-              }}
-              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 text-gray-700 transition-colors"
-            >
-              <span className="text-blue-600">Create new tag: {searchTerm.trim()}</span>
-            </button>
           ) : (
             <div className="px-4 py-2 text-sm text-gray-500">
               No tags found
@@ -209,11 +188,7 @@ const TagSearch: React.FC<TagSearchProps> = ({
         </div>
       )}
 
-      {/* Helper Text */}
-      <p className="text-xs text-gray-500 mt-1">
-        Search for an existing tag.
-        {selectedTag ? ' Press backspace to clear the selected tag.' : ''}
-      </p>
+     
     </div>
   );
 };

@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('tokenExpiration');
     setUser(null);
-    // Immediate redirect without showing any intermediate state
+    
     router.replace('/login');
   };
 

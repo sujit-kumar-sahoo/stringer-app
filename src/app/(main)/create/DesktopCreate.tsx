@@ -8,7 +8,7 @@ import { getContentTypes } from '@/services/contentTypeService';
 import { createContent } from '@/services/contentService';
 import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
 import { useCount } from '@/context/CountContext'
-import TagsSearch from "../../../components/ui/TagSearchComponent"
+import TagSearch from "../../../components/ui/TagSearchComponent"
 import LocationSearch from "../../../components/ui/LocationSearchComponent"
 import { showAlert, showConfirmation } from "@/utils/alert";
 interface FileWithMeta {
@@ -21,15 +21,15 @@ interface FileWithMeta {
 interface Tag {
   id: string;
   name: string;
-  selectedTag: Tag | null;
-  onTagChange: (tag: Tag | null) => void;
-  availableTags: Tag[];
-  isLoading?: boolean;
-  placeholder?: string;
+  // selectedTag: Tag | null;
+  // onTagChange: (tag: Tag | null) => void;
+  // availableTags: Tag[];
+  // isLoading?: boolean;
+  // placeholder?: string;
 }
 
 function Create() {
-   const { refreshCounts } = useCount();
+  const { refreshCounts } = useCount();
   // Rich text editor state
   const [editorData, setEditorData] = useState<string>('')
   const [isEditorReady, setIsEditorReady] = useState(false)
@@ -40,16 +40,16 @@ function Create() {
 
   // Form fields state
   const [priority, setPriority] = useState('')
-  
+
   const [title, setTitle] = useState('')
   interface Location {
     id: string;
     name: string;
   }
- 
+
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
-   const [tagOptions, setTagOptions] = useState<Tag[]>([])
- const [isLoadingTags, setIsLoadingTags] = useState(true)
+  const [tagOptions, setTagOptions] = useState<Tag[]>([])
+  //const [isLoadingTags, setIsLoadingTags] = useState(true)
 
 
   const [priorityOptions, setPriorityOptions] = useState<{ value: string, label: string }[]>([])
@@ -68,9 +68,9 @@ function Create() {
   }
   const [selectedContentType, setSelectedContentType] = useState('')
   const [contentTypeOptions, setContentTypeOptions] = useState<ContentType[]>([])
-  const [isLoadingContentType, setIsLoadingContentType] = useState(true)
+  // const [isLoadingContentType, setIsLoadingContentType] = useState(true)
 
- 
+
 
 
   useEffect(() => {
@@ -139,7 +139,8 @@ function Create() {
 
     const fetchContentTypes = async () => {
       try {
-        setIsLoadingContentType(true)
+
+
         const response = await getContentTypes()
 
         if (response.success && response.data && Array.isArray(response.data)) {
@@ -156,33 +157,32 @@ function Create() {
         }
       } catch (error) {
         console.error('Error fetching locations:', error)
+      }
+
+    }
+    const fetchTags = async () => {
+      try {
+       
+        const response = await getTags()
+
+        if (response.success && response.data && Array.isArray(response.data)) {
+          const tags = response.data
+            .filter((item: any) => item.name && typeof item.name === 'string')
+            .map((item: any) => ({
+              id: item.id.toString(),
+              name: item.name.trim()
+            }))
+          setTagOptions(tags)
+        } else {
+          console.error('Invalid tags response structure:', response)
+        }
+      } catch (error) {
+        console.error('Error fetching tags:', error)
       } finally {
-        setIsLoadingLocations(false)
+        
       }
     }
- const fetchTags = async () => {
-  try {
-    setIsLoadingTags(true) // ✅ Correct loading state
-    const response = await getTags()
 
-    if (response.success && response.data && Array.isArray(response.data)) {
-      const tags = response.data
-        .filter((item: any) => item.name && typeof item.name === 'string') // ✅ Correct field
-        .map((item: any) => ({
-          id: item.id.toString(),
-          name: item.name.trim() // ✅ Correct field name
-        }))
-      setTagOptions(tags) // ✅ Set correct state
-    } else {
-      console.error('Invalid tags response structure:', response) // ✅ Correct error message
-    }
-  } catch (error) {
-    console.error('Error fetching tags:', error) // ✅ Correct error message
-  } finally {
-    setIsLoadingTags(false) // ✅ Correct loading state
-  }
-}
-    
     fetchTags()
     fetchPriorities()
     fetchLocations()
@@ -302,14 +302,14 @@ function Create() {
   }*/
   const [loading, setLoading] = useState<null | "save" | "draft">(null);
   const isFormValid = priority &&
-                      selectedContentType &&
-                      selectedLocation?.name &&
-                      title &&
-                      editorData;
+    selectedContentType &&
+    selectedLocation?.name &&
+    title &&
+    editorData;
 
   const handleSubmit = async (action: 'save' | 'draft') => {
-    setLoading(action); // 🔹 Start loader for clicked button
-    
+    setLoading(action);
+
     const attachment = files
       .filter((f) => f.uploadedUrl)
       .map((f) => ({ url: f.uploadedUrl }));
@@ -317,8 +317,7 @@ function Create() {
     const status = action === 'save' ? 2 : 1;
 
     try {
-      //const formData = new FormData();
-      //formData.append('username', username);
+
       const formData = {
         priority,
         content_type: selectedContentType,
@@ -350,18 +349,18 @@ function Create() {
 
   const handleCancel = () => {
     //if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
-      setPriority('')
-      setSelectedContentType('')
-      setTitle('')
-      setSelectedLocation(null)
-      setEditorData('')
-      setSelectedTag(null)
-      setFiles([])
-      if (editorRef.current) {
-        editorRef.current.innerHTML = ''
-      }
-      setIsEmpty(true)
+    setPriority('')
+    setSelectedContentType('')
+    setTitle('')
+    setSelectedLocation(null)
+    setEditorData('')
+    setSelectedTag(null)
+    setFiles([])
+    if (editorRef.current) {
+      editorRef.current.innerHTML = ''
     }
+    setIsEmpty(true)
+  }
   //}
 
   const ToolbarButton: React.FC<{
@@ -542,11 +541,10 @@ function Create() {
                 <button
                   onClick={() => handleSubmit("draft")}
                   disabled={!isFormValid || loading !== null}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${
-                    isFormValid && !loading
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-green-400 cursor-not-allowed"
-                  }`}
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${isFormValid && !loading
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-green-400 cursor-not-allowed"
+                    }`}
                 >
                   {loading === "draft" ? (
                     <svg
@@ -578,11 +576,10 @@ function Create() {
                 <button
                   onClick={() => handleSubmit("save")}
                   disabled={!isFormValid || loading !== null}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${
-                    isFormValid && !loading
-                      ? "bg-blue-600 hover:bg-blue-700"
-                      : "bg-blue-400 cursor-not-allowed"
-                  }`}
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${isFormValid && !loading
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "bg-blue-400 cursor-not-allowed"
+                    }`}
                 >
                   {loading === "save" ? (
                     <svg
@@ -609,7 +606,7 @@ function Create() {
                     "Create Story"
                   )}
                 </button>
-                
+
               </div>
             </div>
           </div>
@@ -664,7 +661,7 @@ function Create() {
                     </option>
                   ))}
                 </select>
-               
+
               </div>
             </div>
 
@@ -680,13 +677,13 @@ function Create() {
               />
 
 
-             <TagsSearch
-  selectedTag={selectedTag}
-  onTagChange={setSelectedTag}
-  availableTags={tagOptions}
-  isLoading={isLoadingTags} 
-  placeholder="Choose a tag..."
-/>
+              <TagSearch
+                selectedTag={selectedTag}
+                onTagChange={setSelectedTag}
+                availableTags={tagOptions}
+                
+                placeholder="Choose a tag..."
+              />
 
             </div>
             <div>

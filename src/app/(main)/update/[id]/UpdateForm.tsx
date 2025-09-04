@@ -4,15 +4,14 @@ import React, { useState, useRef, useEffect } from 'react'
 import { getPriorities } from '@/services/priorityService';
 import { getLocations } from '@/services/locationService';
 import { getContentTypes } from '@/services/contentTypeService';
+import { getTags } from '@/services/tagService'
 import { updateContent, getContentById } from '@/services/contentService';
 import { getPresignedUrl } from "@/services/uploadService";
-import { useCount } from '@/context/CountContext'
-import TagsSearch from "@/components/ui/TagSearchComponent"
+//import { useCount } from '@/context/CountContext'
+import TagSearch from "@/components/ui/TagSearchComponent"
 import LocationSearch from "@/components/ui/LocationSearchComponent"
 import { showAlert } from "@/utils/alert";
 import { useParams } from 'next/navigation';
-
-import Image from 'next/image'
 interface FileWithMeta {
   file: File;
   previewUrl: string;
@@ -45,15 +44,14 @@ function UpdateForm() {
 
   // Form fields state
   const [priority, setPriority] = useState('')
-  
+
   const [title, setTitle] = useState('')
   interface Location {
     id: string;
     name: string;
   }
- 
-  const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
-  //const [attachments, setAttachments] = useState<FileList | null>(null)
+
+
 
   // Priority state
   const [priorityOptions, setPriorityOptions] = useState<{ value: string, label: string }[]>([])
@@ -64,6 +62,11 @@ function UpdateForm() {
   const [locationOptions, setLocationOptions] = useState<Location[]>([])
   const [isLoadingLocations, setIsLoadingLocations] = useState(true)
 
+  // Tag state
+  const [selectedTag, setSelectedTag] = useState<Tag | null>(null)
+  const [tagOptions, setTagOptions] = useState<Tag[]>([])
+  const [isLoadingTags, setIsLoadingTags] = useState(true)
+
 
   // content type state
   interface ContentType {
@@ -72,9 +75,8 @@ function UpdateForm() {
   }
   const [selectedContentType, setSelectedContentType] = useState('')
   const [contentTypeOptions, setContentTypeOptions] = useState<ContentType[]>([])
-  //const [isLoadingContentType, setIsLoadingContentType] = useState(true)
 
- 
+
 
 
   useEffect(() => {
@@ -94,11 +96,11 @@ function UpdateForm() {
   }, [])
 
   useEffect(() => {
-  if (editorRef.current && editorData) {
-    editorRef.current.innerHTML = editorData
-    setIsEmpty(editorRef.current.textContent?.trim().length === 0)
-  }
-}, [])
+    if (editorRef.current && editorData) {
+      editorRef.current.innerHTML = editorData
+      setIsEmpty(editorRef.current.textContent?.trim().length === 0)
+    }
+  }, [])
 
   useEffect(() => {
     const fetchPriorities = async () => {
@@ -147,6 +149,29 @@ function UpdateForm() {
       }
     }
 
+    const fetchTags = async () => {
+      try {
+        setIsLoadingTags(true) 
+        const response = await getTags()
+
+        if (response.success && response.data && Array.isArray(response.data)) {
+          const tags = response.data
+            .filter((item: any) => item.name && typeof item.name === 'string') // Changed from item.tag to item.name
+            .map((item: any) => ({
+              id: item.id.toString(),
+              name: item.name.trim() // This is correct
+            }))
+          setTagOptions(tags) // Changed from TagOptions to tagOptions
+        } else {
+          console.error('Invalid tags response structure:', response)
+        }
+      } catch (error) {
+        console.error('Error fetching tags:', error)
+      } finally {
+        setIsLoadingTags(false) 
+      }
+    }
+
     const fetchContentTypes = async () => {
       try {
         setIsLoadingLocations(true)
@@ -173,39 +198,36 @@ function UpdateForm() {
 
     const fetchContentById = async () => {
       try {
-        setIsLoadingPriorities(true)
+
         const response = await getContentById(id)
-          setPriority(response.data.priority)
-          setSelectedContentType(response.data.content_type)
-          setTitle(response.data.headline)
-          setSelectedLocation({id: "3", name: response.data.location })
-          setEditorData(response.data.description)
-          setSelectedTag(response.data.tags[0])
-          //setFiles([])
-          setExistingFiles(response.data.attachments);
-          console.log("=========response.data=========");
-          console.log(response.data.attachments);
-          console.log("=========response.data=========");
-          // instead of relying on useEffect, inject here:
-          if (editorRef.current) {
-            editorRef.current.innerHTML = response.data.description || ''
-          }
-      
+        setPriority(response.data.priority)
+        setSelectedContentType(response.data.content_type)
+        setTitle(response.data.headline)
+        setSelectedLocation({ id: "3", name: response.data.location })
+        setEditorData(response.data.description)
+        setSelectedTag({ id: "3", name: response.data.tags })
+        //setFiles([])
+        setExistingFiles(response.data.attachments);
+
+
+        if (editorRef.current) {
+          editorRef.current.innerHTML = response.data.description || ''
+        }
+
       } catch (error) {
         console.error('Error fetching priorities:', error)
-      } finally {
-        setIsLoadingPriorities(false)
       }
-      
+
     }
 
+    fetchTags()
     fetchPriorities()
     fetchLocations()
     fetchContentTypes()
     fetchContentById()
   }, [])
 
-  //text editor start
+
   const updateActiveFormats = () => {
     const formats = new Set<string>()
 
@@ -217,7 +239,7 @@ function UpdateForm() {
 
     setActiveFormats(formats)
   }
-  
+
 
   const saveSelection = () => {
     const selection = window.getSelection()
@@ -332,14 +354,14 @@ function UpdateForm() {
   }*/
   const [loading, setLoading] = useState<null | "save" | "draft">(null);
   const isFormValid = priority &&
-                      selectedContentType &&
-                      selectedLocation?.name &&
-                      title &&
-                      editorData;
+    selectedContentType &&
+    selectedLocation?.name &&
+    title &&
+    editorData;
 
   const handleSubmit = async (action: 'save' | 'draft') => {
-    setLoading(action); 
-    
+    setLoading(action);
+
     const attachment = files
       .filter((f) => f.uploadedUrl)
       .map((f) => ({ url: f.uploadedUrl }));
@@ -347,7 +369,7 @@ function UpdateForm() {
     const status = action === 'save' ? 2 : 1;
 
     try {
-      
+
       const formData = {
         priority,
         content_type: selectedContentType,
@@ -362,11 +384,11 @@ function UpdateForm() {
       const authResult = await updateContent(formData, id);
 
       if (authResult.success) {
-        
+
         showAlert("Success", "Update successfully!", "success");
-        
+
       } else {
-        
+
       }
     } catch (error: any) {
       console.error(error?.message || "Submit failed.");
@@ -376,19 +398,19 @@ function UpdateForm() {
   };
 
   const handleCancel = () => {
-    
-      setPriority('')
-      setSelectedContentType('')
-      setTitle('')
-      setSelectedLocation(null)
-      setEditorData('')
-      setSelectedTag(null)
-      setFiles([])
-      if (editorRef.current) {
-        editorRef.current.innerHTML = ''
-      }
-      setIsEmpty(true)
+
+    setPriority('')
+    setSelectedContentType('')
+    setTitle('')
+    setSelectedLocation(null)
+    setEditorData('')
+    setSelectedTag(null)
+    setFiles([])
+    if (editorRef.current) {
+      editorRef.current.innerHTML = ''
     }
+    setIsEmpty(true)
+  }
   //}
 
   const ToolbarButton: React.FC<{
@@ -573,11 +595,10 @@ function UpdateForm() {
                 <button
                   onClick={() => handleSubmit("save")}
                   disabled={!isFormValid || loading !== null}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${
-                    isFormValid && !loading
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${isFormValid && !loading
                       ? "bg-blue-600 hover:bg-blue-700"
                       : "bg-blue-400 cursor-not-allowed"
-                  }`}
+                    }`}
                 >
                   {loading === "save" ? (
                     <svg
@@ -604,7 +625,7 @@ function UpdateForm() {
                     "Update Story"
                   )}
                 </button>
-                
+
               </div>
             </div>
           </div>
@@ -674,10 +695,12 @@ function UpdateForm() {
               />
 
 
-              <TagsSearch
-               selectedTag={selectedTag}
-              onTagChange={setSelectedTag}
-              placeholder="Choose a tag..."
+              <TagSearch
+                selectedTag={selectedTag}
+                onTagChange={setSelectedTag}
+                availableTags={tagOptions}
+                isLoading={isLoadingTags}
+                placeholder="Choose a tag..."
               />
 
             </div>
@@ -859,7 +882,7 @@ function UpdateForm() {
               }}
             />
           </div>
-           {/* text editor end */}    
+          {/* text editor end */}
           {/* Additional Fields */}
           <div className="p-6 border-t border-gray-200">
             {/* Search & Tags */}
@@ -898,17 +921,16 @@ function UpdateForm() {
                 {/* RIGHT: File list & progress */}
                 <div className="flex flex-col gap-4 overflow-y-auto max-h-96">
                   <div className="max-h-54 overflow-y-auto pr-2 space-y-4">
-                    
+
                     {existingFiles.map((ef, eidx) => (
                       <div key={eidx} className="relative flex items-center gap-4">
-                        
+
                         {ef?.mime.startsWith('image') ? (
-                         <div className="relative h-16 w-16 rounded border border-gray-300 overflow-hidden">
+                          <div className="relative h-16 w-16 rounded border border-gray-300 overflow-hidden">
                             <img
                               src={`${process.env.NEXT_PUBLIC_CDN_URL}/${ef.path}`}
                               alt="preview"
-                              fill
-                              className="object-cover"
+                              className="h-16 w-16 rounded object-cover border border-gray-300"
                             />
                           </div>
                         ) : ef.mime.startsWith('video') ? (
@@ -946,16 +968,16 @@ function UpdateForm() {
                         <div className="flex-1">
                           <p className="text-sm font-medium truncate">{ef.path}</p>
                           <a
-                              href={`${process.env.NEXT_PUBLIC_CDN_URL}/${ef.path}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-green-600"
-                            >
-                              View uploaded file
+                            href={`${process.env.NEXT_PUBLIC_CDN_URL}/${ef.path}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-green-600"
+                          >
+                            View uploaded file
                           </a>
 
                         </div>
-                        
+
                       </div>
                     ))}
                     {files.map((f, idx) => (
@@ -973,13 +995,11 @@ function UpdateForm() {
                         </button>
 
                         {f.file.type.startsWith('image') ? (
-                          <div className="relative h-16 w-16 rounded border border-gray-300 overflow-hidden">
-                            <img
+                          <img
                             src={f.previewUrl}
                             alt="preview"
                             className="h-16 w-16 rounded object-cover border border-gray-300"
                           />
-                          </div>
                         ) : f.file.type.startsWith('video') ? (
                           <video
                             src={f.previewUrl}

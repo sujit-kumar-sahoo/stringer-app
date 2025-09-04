@@ -8,7 +8,7 @@ import { getContentTypes } from '@/services/contentTypeService';
 import { createContent } from '@/services/contentService';
 import { getPresignedUrl, uploadToS3 } from "@/services/uploadService";
 import { useCount } from '@/context/CountContext'
-import TagsSearch from "../../../components/ui/TagSearchComponent"
+import TagSearch from "../../../components/ui/TagSearchComponent"
 import LocationSearch from "../../../components/ui/LocationSearchComponent"
 import { showAlert, showConfirmation } from "@/utils/alert";
 import { Loader2, Save, FileText, XCircle } from "lucide-react";
@@ -22,11 +22,7 @@ interface FileWithMeta {
 interface Tag {
   id: string;
   name: string;
-  selectedTag: Tag | null;
-  onTagChange: (tag: Tag | null) => void;
-  availableTags: Tag[];
-  isLoading?: boolean;
-  placeholder?: string;
+  
 }
 
 function Create() {
@@ -50,7 +46,7 @@ function Create() {
 
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
   const [tagOptions, setTagOptions] = useState<Tag[]>([])
-  const [isLoadingTags, setIsLoadingTags] = useState(true)
+  //const [isLoadingTags, setIsLoadingTags] = useState(true)
 
 
   const [priorityOptions, setPriorityOptions] = useState<{ value: string, label: string }[]>([])
@@ -163,25 +159,23 @@ function Create() {
     }
     const fetchTags = async () => {
       try {
-        setIsLoadingTags(true) // ✅ Correct loading state
+       
         const response = await getTags()
 
         if (response.success && response.data && Array.isArray(response.data)) {
           const tags = response.data
-            .filter((item: any) => item.name && typeof item.name === 'string') // ✅ Correct field
+            .filter((item: any) => item.name && typeof item.name === 'string')
             .map((item: any) => ({
               id: item.id.toString(),
-              name: item.name.trim() // ✅ Correct field name
+              name: item.name.trim() 
             }))
-          setTagOptions(tags) // ✅ Set correct state
+          setTagOptions(tags) 
         } else {
-          console.error('Invalid tags response structure:', response) // ✅ Correct error message
+          console.error('Invalid tags response structure:', response) 
         }
       } catch (error) {
-        console.error('Error fetching tags:', error) // ✅ Correct error message
-      } finally {
-        setIsLoadingTags(false) // ✅ Correct loading state
-      }
+        console.error('Error fetching tags:', error) 
+      } 
     }
 
     fetchTags()
@@ -642,11 +636,11 @@ function Create() {
               />
 
 
-              <TagsSearch
+              <TagSearch
                 selectedTag={selectedTag}
                 onTagChange={setSelectedTag}
                 availableTags={tagOptions}
-                isLoading={isLoadingTags}
+               
                 placeholder="Choose a tag..."
               />
 

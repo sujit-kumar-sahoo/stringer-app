@@ -116,6 +116,8 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
       { id: 'master-location', label: 'Add Location', href: '/master/location' },
       { id: 'master-tag', label: 'Add Tag', href: '/master/tag' },
       { id: 'master-content', label: 'Add ContentType', href: '/master/content' },
+      { id: 'master-role', label: 'Add Role', href: '/master/role' },
+      { id: 'master-user', label: 'Add User', href: '/master/user' },
     ]
   },
 ];

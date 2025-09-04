@@ -45,7 +45,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       <span className="truncate">
       {isLoading
         ? 'Loading...'
-        : (selectedItems?.length === 0) // Add optional chaining
+        : (selectedItems?.length === 0)
         ? label
         : (selectedItems?.length === 1)
         ? options.find(opt => opt[idKey] === selectedItems[0])?.[displayKey] || ''

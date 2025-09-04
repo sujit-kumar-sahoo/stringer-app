@@ -315,7 +315,7 @@ function LoginPage() {
 
               <div className="mt-6 lg:mt-8 text-center">
                 <p className="text-gray-600 text-sm lg:text-base">
-                  Don't have an account?{' '}
+                  Do not have an account?{' '}
                   <button className="text-orange-600 hover:text-orange-700 font-medium transition-colors">
                     Sign up here
                   </button>
