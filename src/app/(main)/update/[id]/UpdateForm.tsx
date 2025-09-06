@@ -20,7 +20,7 @@ interface FileWithMeta {
   s3Key?: string;
 }
 interface Tag {
-  id: string;
+  id: number;
   name: string;
 }
 
@@ -65,8 +65,10 @@ function UpdateForm() {
   // Tag state
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null)
   const [tagOptions, setTagOptions] = useState<Tag[]>([])
-  const [isLoadingTags, setIsLoadingTags] = useState(true)
+ // const [isLoadingTags, setIsLoadingTags] = useState(true)
+  const [currentStatus, setCurrentStatus] = useState(0)
 
+ 
 
   // content type state
   interface ContentType {
@@ -151,7 +153,7 @@ function UpdateForm() {
 
     const fetchTags = async () => {
       try {
-        setIsLoadingTags(true) 
+       
         const response = await getTags()
 
         if (response.success && response.data && Array.isArray(response.data)) {
@@ -167,9 +169,7 @@ function UpdateForm() {
         }
       } catch (error) {
         console.error('Error fetching tags:', error)
-      } finally {
-        setIsLoadingTags(false) 
-      }
+      } 
     }
 
     const fetchContentTypes = async () => {
@@ -205,8 +205,8 @@ function UpdateForm() {
         setTitle(response.data.headline)
         setSelectedLocation({ id: "3", name: response.data.location })
         setEditorData(response.data.description)
-        setSelectedTag({ id: "3", name: response.data.tags })
-        //setFiles([])
+        setSelectedTag(response.data.tags[0])
+        setCurrentStatus(response.data.status)
         setExistingFiles(response.data.attachments);
 
 
@@ -366,7 +366,7 @@ function UpdateForm() {
       .filter((f) => f.uploadedUrl)
       .map((f) => ({ url: f.uploadedUrl }));
 
-    const status = action === 'save' ? 2 : 1;
+    const status = currentStatus;
 
     try {
 
@@ -699,7 +699,7 @@ function UpdateForm() {
                 selectedTag={selectedTag}
                 onTagChange={setSelectedTag}
                 availableTags={tagOptions}
-                isLoading={isLoadingTags}
+             
                 placeholder="Choose a tag..."
               />
 

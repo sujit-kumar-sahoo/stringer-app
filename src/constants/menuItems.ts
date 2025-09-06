@@ -69,7 +69,7 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
         id: 'waiting-in-output', 
         label: 'Waiting In Output', 
         href: '/list/input/waitingInOutput', 
-        countKey: 'inputToStringer' 
+        countKey: 'waitingInOutput' 
       },
       { 
         id: 'output-to-input', 
@@ -118,6 +118,7 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
       { id: 'master-content', label: 'Add ContentType', href: '/master/content' },
       { id: 'master-role', label: 'Add Role', href: '/master/role' },
       { id: 'master-user', label: 'Add User', href: '/master/user' },
+      { id: 'master-price', label: 'Price', href: '/master/price' },
     ]
   },
 ];

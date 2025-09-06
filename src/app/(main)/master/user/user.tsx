@@ -59,16 +59,11 @@ const UserForm: React.FC = () => {
         const convertedUsers: User[] = response.data.map((apiUser: ApiUser) => ({
           id: apiUser.id.toString(),
           name: apiUser.name.trim(),
-          phone: apiUser.phone,
-          email: apiUser.email,
+          phone: apiUser.phone || '',
+          email: apiUser.email || '',
           role_id: apiUser.role_id.toString(),
           location: apiUser.location || '',
-        //   // is_active: apiUser.is_active
-        //    phone: '', // Default empty since not provided by API
-        // email: '', // Default empty since not provided by API
-        // role_id: '', // Default empty since not provided by API
-        // location: '', // Default empty since not provided by API
-        // is_active: true // Default to true since not provided by API
+          is_active: apiUser.is_active !== undefined ? apiUser.is_active : true
         }));
 
         const sortedUsers = convertedUsers.sort((a, b) => parseInt(b.id) - parseInt(a.id));
@@ -138,9 +133,9 @@ const UserForm: React.FC = () => {
       return;
     }
 
-   
+    // Check if email already exists
     const emailExists = users.some(user =>
-      user.email.toLowerCase() === currentUser.email.trim().toLowerCase()
+      user.email && user.email.toLowerCase() === currentUser.email.trim().toLowerCase()
     );
 
     if (emailExists) {
@@ -150,7 +145,7 @@ const UserForm: React.FC = () => {
 
     // Check if phone already exists
     const phoneExists = users.some(user =>
-      user.phone === currentUser.phone.trim()
+      user.phone && user.phone === currentUser.phone.trim()
     );
 
     if (phoneExists) {
@@ -185,8 +180,8 @@ const UserForm: React.FC = () => {
           newUser = {
             id: apiUser.id.toString(),
             name: apiUser.name.trim(),
-            phone: apiUser.phone,
-            email: apiUser.email,
+            phone: apiUser.phone || '',
+            email: apiUser.email || '',
             role_id: apiUser.role_id.toString(),
             location: apiUser.location || '',
             is_active: apiUser.is_active !== undefined ? apiUser.is_active : true
@@ -244,7 +239,7 @@ const UserForm: React.FC = () => {
 
     // Check if email already exists (excluding current user)
     const emailExists = users.some(user =>
-      user.id !== editingUser.id && user.email.toLowerCase() === currentUser.email.trim().toLowerCase()
+      user.id !== editingUser.id && user.email && user.email.toLowerCase() === currentUser.email.trim().toLowerCase()
     );
 
     if (emailExists) {
@@ -254,7 +249,7 @@ const UserForm: React.FC = () => {
 
     // Check if phone already exists (excluding current user)
     const phoneExists = users.some(user =>
-      user.id !== editingUser.id && user.phone === currentUser.phone.trim()
+      user.id !== editingUser.id && user.phone && user.phone === currentUser.phone.trim()
     );
 
     if (phoneExists) {
@@ -354,9 +349,9 @@ const UserForm: React.FC = () => {
     setEditingUser(user);
     setCurrentUser({
       name: user.name,
-      phone: user.phone,
+      phone: user.phone || '',
       password: '',
-      email: user.email,
+      email: user.email || '',
       role_id: user.role_id,
       location: user.location || ''
     });
@@ -446,8 +441,8 @@ const UserForm: React.FC = () => {
                           </span>
                         </div>
                         <div className="text-sm text-gray-600 space-y-0.5">
-                          <div>{user.email}</div>
-                          <div>{user.phone}</div>
+                          <div>{user.email || 'No email'}</div>
+                          <div>{user.phone || 'No phone'}</div>
                           <div className="flex items-center gap-4">
                             <span>Role: {getRoleName(user.role_id)}</span>
                             {user.location && <span>Location: {user.location}</span>}

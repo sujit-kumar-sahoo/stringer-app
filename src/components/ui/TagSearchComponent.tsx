@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 interface Tag {
-  id: string;
+  id: number; // Changed from string to number
   name: string;
 }
 
@@ -96,10 +96,9 @@ const TagSearch: React.FC<TagSearchProps> = ({
       setIsDropdownOpen(false);
       setSearchTerm('');
     } else if (e.key === 'Backspace' && !searchTerm && selectedTag) {
-      
       clearTag();
     }
-  }, [highlightedIndex, filteredTags, selectTag, selectedTag, clearTag, isDropdownOpen]);
+  }, [highlightedIndex, filteredTags, selectTag, selectedTag, clearTag, isDropdownOpen, searchTerm]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -118,8 +117,8 @@ const TagSearch: React.FC<TagSearchProps> = ({
       {/* Selected Tag Display */}
       {selectedTag && (
         <div className="mb-2 flex items-center">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-            {selectedTag.name}
+         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+          {selectedTag.name}
             <button
               type="button"
               onClick={clearTag}
@@ -142,7 +141,7 @@ const TagSearch: React.FC<TagSearchProps> = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={handleInputFocus}
-        
+          placeholder={placeholder}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         />
         
@@ -187,8 +186,6 @@ const TagSearch: React.FC<TagSearchProps> = ({
           )}
         </div>
       )}
-
-     
     </div>
   );
 };

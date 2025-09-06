@@ -4,7 +4,7 @@ import { Lock, PenTool, User, ChevronDown, MapPin, Image as ImageIcon, Video, Fi
 import withAuth from '@/hoc/withAuth';
 import { getContentById, getContentByVersionId, updateContentStatus } from '@/services/contentService';
 import { useParams } from 'next/navigation';
-
+import PublishScheduleForm from "../../../../../components/ui/PublishScheduleForm"
 import { useRouter } from "next/navigation";
 import { useCount } from '@/context/CountContext'
 
@@ -31,9 +31,9 @@ const DesktopStoryDetailView: React.FC = () => {
   const { refreshCounts } = useCount();
   const router = useRouter();
   const params = useParams();
-const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
+  const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'attachments' | 'activities'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'attachments' | 'activities' | 'publishAt'>('overview')
 
   const [showVersionDropdown, setShowVersionDropdown] = useState(false)
   const [activities, setActivities] = useState<StoryData>({
@@ -68,6 +68,7 @@ const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const overviewRef = useRef<HTMLDivElement>(null)
   const attachmentsRef = useRef<HTMLDivElement>(null)
   const activitiesRef = useRef<HTMLDivElement>(null)
+  const publishAtRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const tabContainerRef = useRef<HTMLDivElement>(null)
 
@@ -227,7 +228,7 @@ const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
     )
 
     const timeoutId = setTimeout(() => {
-      const sections = [overviewRef.current, attachmentsRef.current, activitiesRef.current]
+      const sections = [overviewRef.current, attachmentsRef.current, activitiesRef.current, publishAtRef.current]
       sections.forEach((section) => {
         if (section) observer.observe(section)
       })
@@ -235,14 +236,14 @@ const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
     return () => {
       clearTimeout(timeoutId)
-      const sections = [overviewRef.current, attachmentsRef.current, activitiesRef.current]
+      const sections = [overviewRef.current, attachmentsRef.current, activitiesRef.current, publishAtRef.current]
       sections.forEach((section) => {
         if (section) observer.unobserve(section)
       })
     }
   }, [])
 
-  const scrollToSection = (section: 'overview' | 'attachments' | 'activities') => {
+  const scrollToSection = (section: 'overview' | 'attachments' | 'activities' | 'publishAt') => {
     let targetRef
     switch (section) {
       case 'overview':
@@ -253,6 +254,9 @@ const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
         break
       case 'activities':
         targetRef = activitiesRef
+        break
+      case 'publishAt':
+        targetRef = publishAtRef
         break
       default:
         return
@@ -266,7 +270,7 @@ const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
       const scrollTop = container.scrollTop
 
 
-      const headerHeight = 260
+      const headerHeight = 160
       const targetPosition = targetRect.top - containerRect.top + scrollTop - headerHeight
 
       container.scrollTo({
@@ -295,50 +299,49 @@ const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
     }
   }, [showVersionDropdown])
 
-const handleReturnToReporter = async () => {
-  try {
-    const param = { status: "7" };
-    const response = await updateContentStatus(id, param);
-    
-    if (response?.data?.success === true) {
-      await refreshCounts();
-      router.push(`/update/${id}`);
-    } else {
-      // No alert - just redirect
+  const handleReturnToReporter = async () => {
+    try {
+      const param = { status: "7" };
+      const response = await updateContentStatus(id, param);
+
+      if (response?.data?.success === true) {
+        await refreshCounts();
+        router.push(`/update/${id}`);
+      } else {
+
+        router.push(`/list/input/waitList`);
+      }
+    } catch (error: any) {
+      console.error("Error:", error);
       router.push(`/list/input/waitList`);
     }
-  } catch (error: any) {
-    console.error("Error:", error);
-    // No alert - just redirect
-    router.push(`/list/input/waitList`);
-  }
-};
+  };
 
   const handleShare = async () => {
-  try {
-    const param = { status: "3" };
-    await updateContentStatus(id, param);
-    await refreshCounts();
-    router.push(`/list/input/waitingInOutput`);
-  } catch (error: any) {
-    console.error("Error:", error);
-    // No alert - just redirect to a fallback page or stay on current page
-    router.push(`/list/input/waitingInOutput`);
-  }
-};
+    try {
+      const param = { status: "3" };
+      await updateContentStatus(id, param);
+      await refreshCounts();
+      router.push(`/list/input/waitingInOutput`);
+    } catch (error: any) {
+      console.error("Error:", error);
+      // No alert - just redirect to a fallback page or stay on current page
+      router.push(`/list/input/waitingInOutput`);
+    }
+  };
 
-const handleLockEdit = async () => {
-  try {
-    const param = { status: "9" };
-    await updateContentStatus(id, param);
-    await refreshCounts();
-    router.push(`/update/${id}`);
-  } catch (error: any) {
-    console.error("Error:", error);
-    // No alert - just redirect to update page anyway
-    router.push(`/update/${id}`);
-  }
-};
+  const handleLockEdit = async () => {
+    try {
+      const param = { status: "9" };
+      await updateContentStatus(id, param);
+      await refreshCounts();
+      router.push(`/update/${id}`);
+    } catch (error: any) {
+      console.error("Error:", error);
+
+      router.push(`/update/${id}`);
+    }
+  };
 
 
   return (
@@ -434,9 +437,10 @@ const handleLockEdit = async () => {
                     <PenTool size={16} />
 
                     {/* Tooltip */}
-                    <span className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
                       Lock & Edit
                     </span>
+
                   </button>
                 ) : (
                   <div className="p-2 text-gray-400 bg-gray-100 border-2 border-gray-300 rounded-md ml-4 inline-block cursor-not-allowed">
@@ -467,15 +471,24 @@ const handleLockEdit = async () => {
                 >
                   Attachments ({attachments?.length ?? 0})
                 </button>
-                 <button
-                onClick={() => scrollToSection('activities')}
-                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'activities'
+                <button
+                  onClick={() => scrollToSection('activities')}
+                  className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'activities'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-              >
-                Activities ({attachments?.length ?? 0})
-              </button>
+                    }`}
+                >
+                  Activities ({attachments?.length ?? 0})
+                </button>
+                <button
+                  onClick={() => scrollToSection('publishAt')}
+                  className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'publishAt'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                >
+                  Publish At
+                </button>
               </nav>
 
               <div className="flex items-center space-x-2 pl-4">
@@ -629,6 +642,11 @@ const handleLockEdit = async () => {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Publish Section */}
+          <div ref={publishAtRef} data-section="publishAt" className="bg-white shadow-sm border border-gray-200 scroll-mt-40 mb-4 rounded-lg">
+            <PublishScheduleForm/>
           </div>
         </div>
       </div>

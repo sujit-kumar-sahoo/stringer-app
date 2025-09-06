@@ -3,13 +3,19 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 
 export interface CountData {
+  draft: number;
   waitList: number;
-  details: number;
-  inputWip: number;
+  waitingInOutput: number; 
+  rejected: number; 
+  published: number;
+  deleted: number;
   inputToStringer: number;
   outputToInput: number;
-  published: number;
-  draft:number;
+  inputWip: number;
+  outputWip: number;
+  outputToStringer: number; 
+  stringerToOutput: number;
+  shared: number; 
 }
 
 interface CountContextType {
@@ -21,13 +27,19 @@ interface CountContextType {
 }
 
 const defaultCounts: CountData = {
+  draft: 0,
   waitList: 0,
-  details: 0,
-  inputWip: 0,
+  waitingInOutput: 0,
+  rejected: 0,
+  published: 0,
+  deleted: 0,
   inputToStringer: 0,
   outputToInput: 0,
-  published: 0,
-  draft:0,
+  inputWip: 0,
+  outputWip: 0,
+  outputToStringer: 0,
+  stringerToOutput: 0,
+  shared: 0,
 };
 
 const CountContext = createContext<CountContextType | undefined>(undefined);
@@ -76,7 +88,6 @@ export const CountProvider: React.FC<CountProviderProps> = ({ children }) => {
     }));
   }, []);
 
-
   useEffect(() => {
     mountedRef.current = true;
     refreshCounts();
@@ -86,7 +97,6 @@ export const CountProvider: React.FC<CountProviderProps> = ({ children }) => {
     };
   }, [refreshCounts]);
 
-  
   useEffect(() => {
     const handleFocus = () => {
       if (mountedRef.current && !document.hidden) {
