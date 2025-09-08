@@ -175,7 +175,6 @@ const UserForm: React.FC = () => {
         const apiUser = response.data;
         let newUser: User | null = null;
 
-        // Handle different possible response structures
         if (apiUser.id && apiUser.name) {
           newUser = {
             id: apiUser.id.toString(),
@@ -188,34 +187,24 @@ const UserForm: React.FC = () => {
           };
         }
 
-        if (newUser) {
-          setUsers(prev => [newUser!, ...prev]);
-          setCurrentUser({
-            name: '',
-            phone: '',
-            password: '',
-            email: '',
-            role_id: '',
-            location: ''
-          });
-          setSuccessMessage(`User "${newUser.name}" added successfully!`);
-          setTimeout(() => setSuccessMessage(''), 3000);
-        } else {
-          // If we can't parse the response, refresh the list
-          setCurrentUser({
-            name: '',
-            phone: '',
-            password: '',
-            email: '',
-            role_id: '',
-            location: ''
-          });
-          setSuccessMessage('User added successfully!');
-          setTimeout(() => {
-            setSuccessMessage('');
-            loadUsers();
-          }, 2000);
-        }
+
+        setCurrentUser({
+          name: '',
+          phone: '',
+          password: '',
+          email: '',
+          role_id: '',
+          location: ''
+        });
+
+        // Show success message
+        setSuccessMessage(`User "${userData.name}" added successfully!`);
+
+        // Always refresh from database instead of updating local state
+        await loadUsers();
+
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(''), 3000);
       } else {
         const errorMessage = response.message || 'Failed to add user. Please try again.';
         setError(errorMessage);
@@ -275,21 +264,15 @@ const UserForm: React.FC = () => {
       const response = await editUser(userData);
 
       if (response.success) {
-        // Update local state
-        setUsers(prev => prev.map(user =>
-          user.id === editingUser.id
-            ? {
-              ...user,
-              name: userData.name,
-              phone: userData.phone,
-              email: userData.email,
-              role_id: userData.role_id,
-              location: userData.location || ''
-            }
-            : user
-        ));
+
         setSuccessMessage(`User "${userData.name}" updated successfully!`);
+
+
+        await loadUsers();
+
         handleCancelEdit();
+
+
         setTimeout(() => setSuccessMessage(''), 3000);
       } else {
         const errorMessage = response.message || 'Failed to update user. Please try again.';
@@ -413,7 +396,7 @@ const UserForm: React.FC = () => {
             </button>
           </div>
 
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          <div className="space-y-3 max-h-[500px] overflow-y-auto">
             {isLoadingUsers ? (
               <div className="text-center py-8 text-gray-500">
                 <Loader2 className="h-6 w-6 mx-auto mb-2 animate-spin" />
@@ -422,8 +405,8 @@ const UserForm: React.FC = () => {
             ) : users.length > 0 ? (
               users.map((user) => (
                 <div key={user.id} className={`px-4 py-3 rounded-md border transition-colors ${user.is_active
-                    ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
-                    : 'bg-gray-50 border-gray-200 hover:bg-gray-100 opacity-75'
+                  ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100 opacity-75'
                   }`}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -434,8 +417,8 @@ const UserForm: React.FC = () => {
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-gray-800 font-medium truncate">{user.name}</span>
                           <span className={`px-2 py-0.5 text-xs rounded-full ${user.is_active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
                             }`}>
                             {user.is_active ? 'Active' : 'Inactive'}
                           </span>
@@ -459,7 +442,7 @@ const UserForm: React.FC = () => {
                       >
                         <Edit3 className="h-4 w-4" />
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => setShowDeactivateConfirm(user.id)}
                         disabled={isLoading}
                         className={`transition-colors duration-200 p-1 rounded-full disabled:opacity-50 ${user.is_active
@@ -469,7 +452,7 @@ const UserForm: React.FC = () => {
                         title={user.is_active ? "Deactivate user" : "Activate user"}
                       >
                         {user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 </div>
@@ -632,8 +615,8 @@ const UserForm: React.FC = () => {
                     onClick={handleEditUser}
                     disabled={isLoading}
                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isLoading
-                        ? 'bg-gray-400 cursor-not-allowed text-white'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg'
+                      ? 'bg-gray-400 cursor-not-allowed text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg'
                       }`}
                   >
                     {isLoading ? (
@@ -661,8 +644,8 @@ const UserForm: React.FC = () => {
                   onClick={handleAddUser}
                   disabled={isLoading}
                   className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isLoading
-                      ? 'bg-gray-400 cursor-not-allowed text-white'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg'
+                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg'
                     }`}
                 >
                   {isLoading ? (
@@ -713,8 +696,8 @@ const UserForm: React.FC = () => {
                       onClick={() => handleDeactivateUser(showDeactivateConfirm)}
                       disabled={isLoading}
                       className={`px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2 ${user.is_active
-                          ? 'bg-red-600 hover:bg-red-700'
-                          : 'bg-green-600 hover:bg-green-700'
+                        ? 'bg-red-600 hover:bg-red-700'
+                        : 'bg-green-600 hover:bg-green-700'
                         }`}
                     >
                       {isLoading ? (

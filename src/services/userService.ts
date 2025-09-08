@@ -50,7 +50,7 @@ export const addUser = async (formData: any): Promise<ApiResponse> => {
 export const editUser = async (formData: any): Promise<ApiResponse> => {
   try {
     const { id, ...roleData } = formData; 
-    const response = await api.put(`/api/auth/signup${id}`, roleData, {
+    const response = await api.put(`/api/user/${id}`, roleData, {
       headers: {
         'Content-Type': 'application/json',
       },

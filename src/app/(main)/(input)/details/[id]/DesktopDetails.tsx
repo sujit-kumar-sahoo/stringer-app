@@ -646,7 +646,7 @@ const DesktopStoryDetailView: React.FC = () => {
 
           {/* Publish Section */}
           <div ref={publishAtRef} data-section="publishAt" className="bg-white shadow-sm border border-gray-200 scroll-mt-40 mb-4 rounded-lg">
-            <PublishScheduleForm/>
+           <PublishScheduleForm contentId={id} />
           </div>
         </div>
       </div>

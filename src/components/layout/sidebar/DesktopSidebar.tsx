@@ -1,25 +1,24 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { 
+import React, { useState } from "react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  RefreshCw
-} from 'lucide-react';
-import { useSidebar } from '../../../context/SidebarContext';
-import { useCount } from '../../../context/CountContext';
+  RefreshCw,
+} from "lucide-react";
+import { useSidebar } from "../../../context/SidebarContext";
+import { useCount } from "../../../context/CountContext";
 
-
-import { 
+import {
   MAIN_MENU_ITEMS,
   MenuItem,
   getColorClasses,
-  getActiveIndicatorClasses 
-} from '@/constants/menuItems';
+  getActiveIndicatorClasses,
+} from "@/constants/menuItems";
 
 interface SidebarItemProps {
   item: MenuItem;
@@ -37,15 +36,13 @@ interface SectionHeaderProps {
 
 const DesktopSidebar: React.FC = () => {
   const { isOpen, toggleSidebar } = useSidebar();
-  const { counts, isLoading, refreshCounts } = useCount(); 
+  const { counts, isLoading, refreshCounts } = useCount();
   const pathname = usePathname();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   const handleToggleExpand = (id: string) => {
-    setExpandedMenus(prev => 
-      prev.includes(id) 
-        ? prev.filter(menuId => menuId !== id)
-        : [...prev, id]
+    setExpandedMenus((prev) =>
+      prev.includes(id) ? prev.filter((menuId) => menuId !== id) : [...prev, id]
     );
   };
 
@@ -55,15 +52,15 @@ const DesktopSidebar: React.FC = () => {
 
   const isSubItemActive = (item: MenuItem): boolean => {
     if (!item.subItems) return false;
-    return item.subItems.some(subItem => pathname === subItem.href);
+    return item.subItems.some((subItem) => pathname === subItem.href);
   };
 
-  const SidebarItem: React.FC<SidebarItemProps> = ({ 
-    item, 
-    isActive = false, 
+  const SidebarItem: React.FC<SidebarItemProps> = ({
+    item,
+    isActive = false,
     isMinimized = false,
     expandedMenus,
-    onToggleExpand
+    onToggleExpand,
   }) => {
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const isExpanded = expandedMenus.includes(item.id);
@@ -96,7 +93,7 @@ const DesktopSidebar: React.FC = () => {
       <div
         className={`
           group relative w-full flex items-center text-left transition-all duration-300 rounded-xl cursor-pointer
-          ${isMinimized ? 'px-2 py-3 justify-center' : 'px-4 py-3'}
+          ${isMinimized ? "px-2 py-3 justify-center" : "px-4 py-3"}
           ${getColorClasses(item.color, isParentActive)}
           transform hover:scale-105
         `}
@@ -104,26 +101,31 @@ const DesktopSidebar: React.FC = () => {
         onClick={handleMainItemClick}
       >
         {/* Icon */}
-        <div className={`
+        <div
+          className={`
           flex items-center justify-center transition-all duration-300
-          ${isMinimized ? 'w-5 h-5' : 'w-5 h-5 mr-3'}
-        `}>
+          ${isMinimized ? "w-5 h-5" : "w-5 h-5 mr-3"}
+        `}
+        >
           <item.icon className="w-5 h-5" />
         </div>
-        
+
         {!isMinimized && (
           <div className="flex items-center justify-between flex-1">
             <span className="font-semibold text-sm">{item.label}</span>
             <div className="flex items-center space-x-2">
               {itemCount !== undefined && itemCount > 0 && (
-                <span className={`
+                <span
+                  className={`
                   px-2.5 py-1 rounded-full text-xs font-bold
-                  ${isParentActive 
-                    ? 'bg-orange-500/30 text-orange-300 border border-orange-400/50'
-                    : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
+                  ${
+                    isParentActive
+                      ? "bg-orange-500/30 text-orange-300 border border-orange-400/50"
+                      : "bg-slate-700/50 text-slate-300 border border-slate-600/50"
                   }
-                `}>
-                  {isLoading ? '...' : itemCount}
+                `}
+                >
+                  {isLoading ? "..." : itemCount}
                 </span>
               )}
               {hasSubItems && (
@@ -140,7 +142,9 @@ const DesktopSidebar: React.FC = () => {
         )}
 
         {isParentActive && (
-          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 rounded-r-full ${getActiveIndicatorClasses()}`} />
+          <div
+            className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 rounded-r-full ${getActiveIndicatorClasses()}`}
+          />
         )}
       </div>
     );
@@ -159,31 +163,37 @@ const DesktopSidebar: React.FC = () => {
           <div className="ml-6 mt-1 space-y-1 border-l-2 border-slate-700/50 pl-4">
             {item.subItems?.map((subItem) => {
               const isSubActive = pathname === subItem.href;
-              const subItemCount = subItem.countKey ? counts[subItem.countKey] : undefined;
-              
+              const subItemCount = subItem.countKey
+                ? counts[subItem.countKey]
+                : undefined;
+
               return (
                 <Link
                   key={subItem.id}
                   href={subItem.href}
                   className={`
                     block px-3 py-2 rounded-lg text-sm transition-all duration-200
-                    ${isSubActive 
-                      ? 'bg-orange-500/20 text-orange-300 font-medium border-l-2 border-orange-400' 
-                      : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    ${
+                      isSubActive
+                        ? "bg-orange-500/20 text-orange-300 font-medium border-l-2 border-orange-400"
+                        : "text-slate-300 hover:text-white hover:bg-slate-700/50"
                     }
                   `}
                 >
                   <div className="flex items-center justify-between">
                     <span>{subItem.label}</span>
                     {subItemCount !== undefined && subItemCount > 0 && (
-                      <span className={`
+                      <span
+                        className={`
                         px-2 py-0.5 rounded-full text-xs font-bold
-                        ${isSubActive 
-                          ? 'bg-orange-500/30 text-orange-300 border border-orange-400/50'
-                          : 'bg-slate-600/50 text-slate-400'
+                        ${
+                          isSubActive
+                            ? "bg-orange-500/30 text-orange-300 border border-orange-400/50"
+                            : "bg-slate-600/50 text-slate-400"
                         }
-                      `}>
-                        {isLoading ? '...' : subItemCount}
+                      `}
+                      >
+                        {isLoading ? "..." : subItemCount}
                       </span>
                     )}
                   </div>
@@ -197,16 +207,24 @@ const DesktopSidebar: React.FC = () => {
         {isMinimized && (
           <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-2 bg-slate-800 border border-orange-400/30 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
             {item.label}
-            {itemCount && itemCount > 0 && <span className="ml-1 font-bold text-orange-300">({itemCount})</span>}
+            {itemCount && itemCount > 0 && (
+              <span className="ml-1 font-bold text-orange-300">
+                ({itemCount})
+              </span>
+            )}
             {hasSubItems && (
               <div className="mt-1 pt-1 border-t border-slate-600/50">
                 {item.subItems?.map((subItem) => {
-                  const subItemCount = subItem.countKey ? counts[subItem.countKey] : undefined;
+                  const subItemCount = subItem.countKey
+                    ? counts[subItem.countKey]
+                    : undefined;
                   return (
                     <div key={subItem.id} className="text-xs text-slate-300">
                       {subItem.label}
                       {subItemCount !== undefined && subItemCount > 0 && (
-                        <span className="ml-1 text-orange-300">({isLoading ? '...' : subItemCount})</span>
+                        <span className="ml-1 text-orange-300">
+                          ({isLoading ? "..." : subItemCount})
+                        </span>
                       )}
                     </div>
                   );
@@ -221,29 +239,37 @@ const DesktopSidebar: React.FC = () => {
     );
   };
 
-  const SectionHeader: React.FC<SectionHeaderProps> = ({ title, action = false, isMinimized = false }) => (
-    <div className={`flex items-center justify-between mb-3 ${isMinimized ? 'hidden' : ''}`}>
-     
-    </div>
+  const SectionHeader: React.FC<SectionHeaderProps> = ({
+    title,
+    action = false,
+    isMinimized = false,
+  }) => (
+    <div
+      className={`flex items-center justify-between mb-3 ${
+        isMinimized ? "hidden" : ""
+      }`}
+    ></div>
   );
 
   return (
-    <div className={`
-      bg-gradient-to-b from-slate-800 via-slate-900 to-blue-900
-      border-r border-slate-700
-      transition-all duration-500 ease-in-out
-      backdrop-blur-xl
-      shadow-2xl
-      h-screen
-      relative
-      flex flex-col
-      ${isOpen ? 'w-72' : 'w-20'}
-    `}>
+    <div
+      className={`
+  bg-gradient-to-b from-slate-800 via-slate-900 to-blue-900
+  border-r border-slate-700
+  transition-all duration-500 ease-in-out
+  backdrop-blur-xl
+  shadow-2xl
+  h-screen
+  relative
+  flex flex-col
+  ${isOpen ? "w-72" : "w-20"}
+`}
+    >
       {/* Toggle button */}
       <button
         onClick={toggleSidebar}
         className="absolute top-1/2 -translate-y-1/2 -right-3 z-10 w-6 h-12 bg-orange-500 hover:bg-orange-400 border border-orange-400 rounded-r-lg shadow-lg hover:shadow-xl flex items-center justify-center text-white hover:text-white transition-all duration-300 hover:scale-110"
-        aria-label={isOpen ? 'Minimize sidebar' : 'Expand sidebar'}
+        aria-label={isOpen ? "Minimize sidebar" : "Expand sidebar"}
       >
         {isOpen ? (
           <ChevronLeft className="w-4 h-4" />
@@ -251,24 +277,22 @@ const DesktopSidebar: React.FC = () => {
           <ChevronRight className="w-4 h-4" />
         )}
       </button>
-      
+
       {/* Navigation - Made scrollable */}
-      <nav className={`
-        flex-1 overflow-y-auto overflow-x-hidden
-        ${isOpen ? 'px-6 py-6' : 'px-4 py-4'}
-        scrollbar-hide
-      `} 
-      style={{
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none'
-      }}>
+      <nav
+        className={`
+  flex-1 overflow-y-auto overflow-x-hidden min-h-0
+  ${isOpen ? "px-6 py-6" : "px-4 py-4"}
+  scrollbar-hide
+`}
+      >
         <div>
           <SectionHeader title="Main" action isMinimized={!isOpen} />
           <div className="space-y-2">
             {MAIN_MENU_ITEMS.map((item: MenuItem) => (
-              <SidebarItem 
-                key={item.id} 
-                item={item} 
+              <SidebarItem
+                key={item.id}
+                item={item}
                 isActive={pathname === item.href}
                 isMinimized={!isOpen}
                 expandedMenus={expandedMenus}
@@ -277,29 +301,31 @@ const DesktopSidebar: React.FC = () => {
             ))}
           </div>
         </div>
-        
-        {/* Bottom spacing to prevent overlap with refresh button */}
-        <div className="h-16"></div>
       </nav>
 
       {/* Refresh Button - Fixed at bottom */}
-      <div className={`
-        ${isOpen ? 'p-6 pt-0' : 'p-4 pt-0'}
-        border-t border-slate-700/50
-        bg-gradient-to-t from-slate-900 to-transparent
-      `}>
-        <button 
+      <div
+        className={`
+  flex-shrink-0
+  ${isOpen ? "p-6 pt-0" : "p-4 pt-0"}
+  border-t border-slate-700/50
+  bg-gradient-to-t from-slate-900 to-transparent
+`}
+      >
+        <button
           onClick={handleRefreshCounts}
           disabled={isLoading}
           className={`
             w-full p-3 bg-orange-500 hover:bg-orange-400 rounded-lg shadow-lg 
             hover:shadow-xl transition-all duration-300 disabled:opacity-50 
             hover:scale-105 flex items-center justify-center space-x-2
-            ${!isOpen ? 'px-2' : ''}
+            ${!isOpen ? "px-2" : ""}
           `}
           title="Refresh counts"
         >
-          <RefreshCw className={`w-5 h-5 text-white ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`w-5 h-5 text-white ${isLoading ? "animate-spin" : ""}`}
+          />
           {isOpen && <span className="text-white font-medium">Refresh</span>}
         </button>
       </div>

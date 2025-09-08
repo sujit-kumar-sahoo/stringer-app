@@ -31,10 +31,10 @@ export const addContentTypes = async  (formData: any): Promise<ApiResponse> => {
   
    
    
-    const response = await api.post('/api/content_type/',  {
+    const response = await api.post('/api/content_type/', formData,   {
       headers: {
         'Content-Type': 'application/json',
-        formData,
+     
       },
     });
 

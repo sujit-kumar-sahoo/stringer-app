@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { Plus, Clock, Trash2, Calendar } from 'lucide-react'
+import { Plus, Clock,  Calendar } from 'lucide-react'
 import { getPriceTag } from '@/services/priceTag'
 import { addPublish } from '@/services/publishAt'
 
@@ -8,21 +8,26 @@ interface PublishScheduleItem {
   id: string;
   platform: string;
   publishTime: string;
+  price_tag_id?: string;
+  content_id?: string;
 }
 
 interface PublishScheduleFormProps {
   onScheduleAdd?: (item: PublishScheduleItem) => void;
   className?: string;
+  contentId?: string; 
 }
 
 interface PlatformOption {
   value: string;
   label: string;
+  id?: string; 
 }
 
 const PublishScheduleForm: React.FC<PublishScheduleFormProps> = ({ 
   onScheduleAdd, 
-  className = "" 
+  className = "",
+  contentId = "122" 
 }) => {
   const [selectedPlatform, setSelectedPlatform] = useState('')
   const [publishTime, setPublishTime] = useState('')
@@ -42,10 +47,6 @@ const PublishScheduleForm: React.FC<PublishScheduleFormProps> = ({
         
         const priceTagData = await getPriceTag()
         
-        // Debug logging
-        console.log('getPriceTag response:', priceTagData)
-        console.log('Is array:', Array.isArray(priceTagData))
-        
         // Transform the data from getPriceTag into platform options
         const platforms: PlatformOption[] = [
           { value: '', label: 'Select Platform' }
@@ -54,29 +55,25 @@ const PublishScheduleForm: React.FC<PublishScheduleFormProps> = ({
         // Check if response has success and data properties
         if (priceTagData?.success && Array.isArray(priceTagData.data)) {
           const platformsFromData = priceTagData.data.map((item: any) => {
-            console.log('Processing item:', item)
             return {
               value: item.type, // Using 'type' as the value (TV, ENGLISH_WEB)
-              label: item.type_text // Using 'type_text' as the display label (Tv, English web)
+              label: item.type_text, // Using 'type_text' as the display label (Tv, English web)
+              id: item.id?.toString() // Using 'id' as the priceTag value
             }
           })
-          console.log('Mapped platforms:', platformsFromData)
           platforms.push(...platformsFromData)
         } else if (Array.isArray(priceTagData)) {
           // Fallback for direct array response
           const platformsFromData = priceTagData.map((item: any) => ({
             value: item.type,
-            label: item.type_text
+            label: item.type_text,
+            id: item.id?.toString() // Using 'id' as the priceTag value
           }))
           platforms.push(...platformsFromData)
-        } else {
-          console.log('Unexpected data structure:', priceTagData)
         }
         
-        console.log('Final platform options:', platforms)
         setPlatformOptions(platforms)
       } catch (error) {
-        console.error('Error fetching platforms:', error)
         setPlatformError(`Failed to load platforms: ${error}`)
       } finally {
         setIsLoadingPlatforms(false)
@@ -85,6 +82,12 @@ const PublishScheduleForm: React.FC<PublishScheduleFormProps> = ({
 
     fetchPlatforms()
   }, [])
+
+  // Get price_tag_id for selected platform
+  const getPriceTagId = (platformValue: string): string => {
+    const platform = platformOptions.find(option => option.value === platformValue)
+    return platform?.id || "1" // Return the actual id from getPriceTag data
+  }
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,47 +98,69 @@ const PublishScheduleForm: React.FC<PublishScheduleFormProps> = ({
       return
     }
 
+    const priceTagId = getPriceTagId(selectedPlatform)
+    
+    // Convert publishTime to ISO string format if it's a datetime-local input
+    let formattedPublishTime = publishTime
+    if (selectedPlatform === 'TV' && publishTime) {
+      // For datetime-local input, ensure it's in ISO format
+      const date = new Date(publishTime)
+      if (!isNaN(date.getTime())) {
+        formattedPublishTime = date.toISOString()
+      }
+    }
+
     const newItem: PublishScheduleItem = {
       id: Date.now().toString(),
       platform: selectedPlatform,
-      publishTime: publishTime
+      publishTime: formattedPublishTime,
+      price_tag_id: priceTagId,
+      content_id: contentId
     }
 
-    // Add to local list
     setPublishScheduleList(prev => [...prev, newItem])
 
-    // Call parent callback if provided
     if (onScheduleAdd) {
       onScheduleAdd(newItem)
     }
 
-    // Optionally call addPublish service
     try {
-      await addPublish(newItem)
+      const apiData = {
+        price_tag_id: priceTagId, 
+        content_id: contentId,
+        publish_url_time: formattedPublishTime 
+      }
+      
+      const response = await addPublish(apiData)
+      
+      if (!response.success) {
+        alert(`Error: ${response.message}`)
+        setPublishScheduleList(prev => prev.filter(item => item.id !== newItem.id))
+        return
+      }
+      
     } catch (error) {
-      console.error('Error adding publish schedule:', error)
-      // Handle error appropriately - maybe show a toast notification
+      alert('Failed to add publish schedule. Please try again.')
+      setPublishScheduleList(prev => prev.filter(item => item.id !== newItem.id))
+      return
     }
 
-    // Reset form
     setSelectedPlatform('')
     setPublishTime('')
   }
 
-  // Remove item from list
-  const removeItem = (id: string) => {
-    setPublishScheduleList(prev => prev.filter(item => item.id !== id))
-  }
 
-  // Get platform display name
+
   const getPlatformLabel = (value: string) => {
     const platform = platformOptions.find(option => option.value === value)
     return platform ? platform.label : value
   }
 
-  // Format datetime for display
   const formatDateTime = (dateTimeString: string) => {
     const date = new Date(dateTimeString)
+    if (isNaN(date.getTime())) {
+      return dateTimeString 
+    }
     return date.toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -145,20 +170,39 @@ const PublishScheduleForm: React.FC<PublishScheduleFormProps> = ({
     })
   }
 
+  const truncateUrl = (url: string, maxLength: number = 80) => {
+    if (url.length <= maxLength) return url
+    return url.substring(0, maxLength) + '...'
+  }
+
+  const isUrl = (text: string) => {
+    try {
+      new URL(text)
+      return true
+    } catch {
+      return text.startsWith('http://') || text.startsWith('https://')
+    }
+  }
+
+  const isTVPlatform = selectedPlatform === 'TV'
+
   return (
-    <div className={`p-6 ${className}`}>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center">
-          <Calendar className="mr-2" size={20} />
-          Publish Schedule ({publishScheduleList.length})
+    <div className={`p-6 bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6 pb-3 border-b border-gray-200">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+          <Calendar className="mr-3 text-blue-600" size={20} />
+          Publish Schedule
         </h2>
+        <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+          {publishScheduleList.length} scheduled
+        </span>
       </div>
 
       {/* Add Schedule Form */}
-      <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex gap-4">
-            
+      <div className="bg-gray-50 rounded-lg p-5 mb-6">
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div>
               <label htmlFor="platform" className="block text-sm font-medium text-gray-700 mb-2">
                 Platform
@@ -168,7 +212,7 @@ const PublishScheduleForm: React.FC<PublishScheduleFormProps> = ({
                 value={selectedPlatform}
                 onChange={(e) => setSelectedPlatform(e.target.value)}
                 disabled={isLoadingPlatforms}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed bg-white"
               >
                 {isLoadingPlatforms ? (
                   <option value="">Loading platforms...</option>
@@ -185,24 +229,34 @@ const PublishScheduleForm: React.FC<PublishScheduleFormProps> = ({
               )}
             </div>
 
-            {/* Publish Time Input */}
             <div>
               <label htmlFor="publishTime" className="block text-sm font-medium text-gray-700 mb-2">
                 Publish Time
               </label>
-              <input
-                type="datetime-local"
-                id="publishTime"
-                value={publishTime}
-                onChange={(e) => setPublishTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              {isTVPlatform ? (
+                <input
+                  type="datetime-local"
+                  id="publishTime"
+                  value={publishTime}
+                  onChange={(e) => setPublishTime(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                />
+              ) : (
+                <input
+                  type="text"
+                  id="publishTime"
+                  value={publishTime}
+                  onChange={(e) => setPublishTime(e.target.value)}
+                  placeholder="Enter publish time"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                />
+              )}
             </div>
             
             <button
               type="submit"
               disabled={isLoadingPlatforms}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               <Plus size={16} />
               Add Schedule
@@ -215,48 +269,52 @@ const PublishScheduleForm: React.FC<PublishScheduleFormProps> = ({
       <div className="space-y-3">
         {publishScheduleList.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-              <Clock className="mr-2" size={16} />
+            <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
+              <Clock className="mr-2 text-gray-600" size={18} />
               Scheduled Publications
             </h3>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               {publishScheduleList.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
+                  className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
                 >
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-start space-x-4 flex-1 min-w-0">
+                    {/* Platform badge with fixed width */}
                     <div className="flex-shrink-0">
-                      <span className="inline-flex px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                      <span className="inline-flex px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full border border-blue-200 whitespace-nowrap min-w-[80px] justify-center">
                         {getPlatformLabel(item.platform)}
                       </span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-gray-900 flex items-center">
-                        <Clock className="mr-1" size={14} />
-                        {formatDateTime(item.publishTime)}
-                      </p>
+                    
+                    {/* Content with proper overflow handling */}
+                    <div className="flex-1 min-w-0 space-y-1" >
+                      {/* Time display */}
+                      <div className="flex items-center text-sm text-gray-900">
+                        <Clock className="mr-2 text-gray-500 flex-shrink-0" size={14} />
+                        <span className="whitespace-nowrap">
+                          {formatDateTime(item.publishTime)}
+                        </span>
+                      </div>
+                      
+                     
+                      {isUrl(item.publishTime) && (
+                        <div className="text-xs text-gray-600 break-all">
+                          <span className="font-medium">URL: </span>
+                          <span 
+                            className="hover:text-blue-600 cursor-pointer"
+                            title={item.publishTime}
+                          >
+                            {truncateUrl(item.publishTime)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="text-red-400 hover:text-red-600 transition-colors p-1"
-                    title="Remove schedule"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {publishScheduleList.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <Calendar className="mx-auto mb-2" size={48} />
-            <p>No publish schedules added yet</p>
-            <p className="text-sm">Add a schedule using the form above</p>
           </div>
         )}
       </div>

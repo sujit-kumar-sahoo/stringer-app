@@ -46,13 +46,13 @@ const ContentTypeForm: React.FC = () => {
 
   const handleAddContentType = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
-    
+
     if (!currentContentType.trim()) {
       return;
     }
 
     // Check if content type already exists
-    const contentTypeExists = contentTypes.some(contentType => 
+    const contentTypeExists = contentTypes.some(contentType =>
       contentType.name.toLowerCase() === currentContentType.trim().toLowerCase()
     );
 
@@ -61,82 +61,39 @@ const ContentTypeForm: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
-    setError('');
-    setSuccessMessage('');
+   setIsLoading(true);
+setError('');
+setSuccessMessage('');
 
-    try {
-      const contentTypeName = currentContentType.trim();
-      const response = await addContentTypes({ content_type: contentTypeName });
-      
-      console.log('API Response:', response);
-      
-      let newContentType: ContentType | null = null;
-      
-      // Handle different response formats with better error checking
-      if (response && typeof response === 'object') {
-        if (response.success && response.data) {
-          // Standard success response
-          const apiContentType = response.data;
-          
-          if (apiContentType?.id && apiContentType?.content_type) {
-            newContentType = {
-              id: apiContentType.id.toString(),
-              name: apiContentType.content_type.trim()
-            };
-          }
-        } else if ((response as any).id && (response as any).content_type) {
-          // Direct response format
-          newContentType = {
-            id: (response as any).id.toString(),
-            name: (response as any).content_type.trim()
-          };
-        } else if ((response as any).id && (response as any).name) {
-          // Alternative field name
-          newContentType = {
-            id: (response as any).id.toString(),
-            name: (response as any).name.trim()
-          };
-        } else if ((response as any).success !== false) {
-          // If we can't parse but it's not explicitly failed, assume success and refresh
-          console.log('Assuming success, will refresh to get actual data');
-          setCurrentContentType('');
-          setSuccessMessage('Content type added successfully! Refreshing list...');
-          setTimeout(() => {
-            loadContentTypes();
-            setSuccessMessage('');
-          }, 1000);
-          return;
-        }
-      }
-      
-      if (newContentType) {
-        // Add to local state immediately at the beginning
-        setContentTypes(prev => [newContentType!, ...prev]);
-        setCurrentContentType('');
-        setSuccessMessage(`Content type "${newContentType.name}" added successfully!`);
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } else {
-        console.log('Could not parse content type from response, refreshing list');
-        setCurrentContentType('');
-        setTimeout(() => {
-          loadContentTypes();
-        }, 2000);
-      }
-      
-    } catch (err: any) {
-      console.log('Error adding content type:', err?.message || 'Unknown error');
-      
-      // Show a generic error message to the user only if it's a network/serious error
-      if (err?.name === 'NetworkError' || err?.message?.includes('fetch')) {
-        setError('Network error. Please check your connection and try again.');
-      }
-      // For other errors, just log and continue
-    } finally {
-      setIsLoading(false);
-    }
+try {
+  const contentTypeName = currentContentType.trim();
+  const response = await addContentTypes({ content_type: contentTypeName });
+
+  console.log('API Response:', response);
+
+  // Clear the form
+  setCurrentContentType('');
+
+  // Show success message
+  setSuccessMessage(`Content type "${contentTypeName}" added successfully!`);
+
+  // Always refresh from database
+  await loadContentTypes();
+
+  // Clear success message after 3 seconds
+  setTimeout(() => setSuccessMessage(''), 3000);
+
+} catch (err: any) {
+  console.log('Error adding content type:', err?.message || 'Unknown error');
+  
+  if (err?.name === 'NetworkError' || err?.message?.includes('fetch')) {
+    setError('Network error. Please check your connection and try again.');
+  } else {
+    setError('Failed to add content type. Please try again.');
+  }
+} finally {
+  setIsLoading(false);
+}
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,7 +128,7 @@ const ContentTypeForm: React.FC = () => {
               Refresh
             </button>
           </div>
-          
+
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {isLoadingContentTypes ? (
               <div className="text-center py-8 text-gray-500">
@@ -184,7 +141,6 @@ const ContentTypeForm: React.FC = () => {
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <FileText className="h-4 w-4 text-purple-500 flex-shrink-0" />
                     <span className="text-gray-700 font-medium truncate">{contentType.name}</span>
-                    <span className="text-xs text-gray-400 flex-shrink-0">#{contentType.id}</span>
                   </div>
                 </div>
               ))
@@ -204,7 +160,7 @@ const ContentTypeForm: React.FC = () => {
             <Plus className="h-5 w-5 text-green-500" />
             Add New Content Type
           </h3>
-          
+
           <div className="space-y-4">
             {/* Error Message */}
             {error && (
@@ -232,22 +188,20 @@ const ContentTypeForm: React.FC = () => {
                 value={currentContentType}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                  error ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${error ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 placeholder="Enter content type name (e.g., AVO, PKG, LIVE, DIGI)"
                 onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleAddContentType(e)}
               />
             </div>
-            
+
             <button
               onClick={handleAddContentType}
               disabled={isLoading || !currentContentType.trim()}
-              className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-                isLoading || !currentContentType.trim()
+              className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${isLoading || !currentContentType.trim()
                   ? 'bg-gray-400 cursor-not-allowed text-white'
                   : 'bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
-              }`}
+                }`}
             >
               {isLoading ? (
                 <>
@@ -262,28 +216,7 @@ const ContentTypeForm: React.FC = () => {
               )}
             </button>
 
-            {/* Quick Preview Section */}
-            {contentTypes.length > 0 && (
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-600 mb-2">Quick view:</p>
-                <div className="flex flex-wrap gap-2">
-                  {contentTypes.slice(0, 8).map((contentType) => (
-                    <span
-                      key={contentType.id}
-                      className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm"
-                    >
-                      <FileText className="h-3 w-3" />
-                      {contentType.name}
-                    </span>
-                  ))}
-                  {contentTypes.length > 8 && (
-                    <span className="text-xs text-gray-500 px-2 py-1">
-                      +{contentTypes.length - 8} more...
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
       </div>

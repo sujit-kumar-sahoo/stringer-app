@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, MapPin,  Loader2, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Plus, MapPin, Loader2, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { addLocations, getLocations } from "@/services/locationService";
 
 interface Location {
@@ -20,7 +20,7 @@ const LocationForm: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
 
-  
+
   useEffect(() => {
     loadLocations();
   }, []);
@@ -48,13 +48,13 @@ const LocationForm: React.FC = () => {
 
   const handleAddLocation = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
-    
+
     if (!currentLocation.trim()) {
       return; // Just return without showing error
     }
 
     // Check if location already exists
-    const locationExists = locations.some(location => 
+    const locationExists = locations.some(location =>
       location.name.toLowerCase() === currentLocation.trim().toLowerCase()
     );
 
@@ -70,18 +70,18 @@ const LocationForm: React.FC = () => {
     try {
       const locationName = currentLocation.trim();
       const response = await addLocations({ location: locationName });
-      
+
       // Debug: Log the response to understand its structure
       console.log('API Response:', response);
-      
+
       let newLocation: Location | null = null;
-      
+
       // Handle different response formats with proper null checks
       if (response.success && response.data) {
         // Standard success response
         const apiLocation = response.data;
         console.log('API Location data:', apiLocation);
-        
+
         if (apiLocation && apiLocation.id && apiLocation.location) {
           newLocation = {
             id: apiLocation.id.toString(),
@@ -98,7 +98,7 @@ const LocationForm: React.FC = () => {
       } else {
         // Try to handle other possible formats
         console.log('Checking alternative response formats...');
-        
+
         // Maybe the API returns the location data directly
         if ((response as any).id && ((response as any).name || (response as any).location_name)) {
           newLocation = {
@@ -127,28 +127,19 @@ const LocationForm: React.FC = () => {
           return;
         }
       }
-      
-      if (newLocation) {
-        // Add to local state immediately at the beginning of the array
-        setLocations(prev => [newLocation!, ...prev]);
-        setCurrentLocation('');
-        setSuccessMessage(`Location "${newLocation.name}" added successfully!`);
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } else {
-        console.log('Could not parse location from response, refreshing list');
-        // Clear the input field even if we couldn't parse the response
-        setCurrentLocation('');
-        // Auto-refresh after a short delay
-        setTimeout(() => {
-          loadLocations();
-        }, 2000);
-      }
-      
+
+      setCurrentLocation('');
+
+
+      setSuccessMessage(`Location "${locationName}" added successfully!`);
+
+      await loadLocations();
+
+
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
       console.log('Error adding location:', err);
-      // Just continue without showing error to user
+
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +175,7 @@ const LocationForm: React.FC = () => {
               Refresh
             </button>
           </div>
-          
+
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {isLoadingLocations ? (
               <div className="text-center py-8 text-gray-500">
@@ -197,7 +188,6 @@ const LocationForm: React.FC = () => {
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <MapPin className="h-4 w-4 text-blue-500 flex-shrink-0" />
                     <span className="text-gray-700 font-medium truncate">{location.name}</span>
-                    <span className="text-xs text-gray-400 flex-shrink-0">#{location.id}</span>
                   </div>
                 </div>
               ))
@@ -217,7 +207,7 @@ const LocationForm: React.FC = () => {
             <Plus className="h-5 w-5 text-green-500" />
             Add New Location
           </h3>
-          
+
           <div className="space-y-4">
             {/* Error Message - Only for duplicate locations */}
             {error && (
@@ -245,22 +235,20 @@ const LocationForm: React.FC = () => {
                 value={currentLocation}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                  error ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${error ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 placeholder="Enter location name (e.g., New York, London, Tokyo)"
                 onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleAddLocation(e)}
               />
             </div>
-            
+
             <button
               onClick={handleAddLocation}
               disabled={isLoading || !currentLocation.trim()}
-              className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                isLoading || !currentLocation.trim()
-                  ? 'bg-gray-400 cursor-not-allowed text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
-              }`}
+              className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isLoading || !currentLocation.trim()
+                ? 'bg-gray-400 cursor-not-allowed text-white'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                }`}
             >
               {isLoading ? (
                 <>

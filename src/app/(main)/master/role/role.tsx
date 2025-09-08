@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Shield,  Loader2, RefreshCw, AlertCircle, CheckCircle2, Edit3, Trash2 } from 'lucide-react';
+import { Plus, Shield, Loader2, RefreshCw, AlertCircle, CheckCircle2, Edit3, Trash2 } from 'lucide-react';
 import { addRoles, getRoles, editRoles, dltRoles } from "@/services/roleService";
 
 interface Role {
@@ -16,7 +16,7 @@ interface ApiRole {
 const RoleForm: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [currentRole, setCurrentRole] = useState<string>('');
- 
+
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoadingRoles, setIsLoadingRoles] = useState<boolean>(false);
@@ -37,7 +37,7 @@ const RoleForm: React.FC = () => {
           id: apiRole.role_id.toString(),
           name: apiRole.role_name.trim(),
         }));
-        
+
         const sortedRoles = convertedRoles.sort((a, b) => parseInt(b.id) - parseInt(a.id));
         setRoles(sortedRoles);
       }
@@ -50,13 +50,13 @@ const RoleForm: React.FC = () => {
 
   const handleAddRole = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
-    
+
     if (!currentRole.trim()) {
       return;
     }
 
     // Check if role already exists (case insensitive)
-    const roleExists = roles.some(role => 
+    const roleExists = roles.some(role =>
       role.name.toLowerCase() === currentRole.trim().toLowerCase()
     );
 
@@ -70,18 +70,18 @@ const RoleForm: React.FC = () => {
     setSuccessMessage('');
 
     try {
-      const roleData = { 
+      const roleData = {
         role_name: currentRole.trim(),
       };
-      
+
       console.log('Sending role data:', roleData);
       const response = await addRoles(roleData);
       console.log('API Response:', response);
-      
+
       if (response.success && response.data) {
         const apiRole = response.data;
         let newRole: Role | null = null;
-        
+
         // Handle different possible response structures
         if (apiRole.role_id && apiRole.role_name) {
           newRole = {
@@ -94,28 +94,25 @@ const RoleForm: React.FC = () => {
             name: apiRole.name.trim(),
           };
         }
-        
-        if (newRole) {
-          setRoles(prev => [newRole!, ...prev]);
-          setCurrentRole('');
-          setSuccessMessage(`Role "${newRole.name}" added successfully!`);
-          setTimeout(() => setSuccessMessage(''), 3000);
-        } else {
-          // If we can't parse the response, refresh the list
-          setCurrentRole('');
-          setSuccessMessage('Role added successfully!');
-          setTimeout(() => {
-            setSuccessMessage('');
-            loadRoles();
-          }, 2000);
-        }
+
+
+        setCurrentRole('');
+
+
+        setSuccessMessage(`Role  added successfully!`);
+
+
+        await loadRoles();
+
+
+        setTimeout(() => setSuccessMessage(''), 3000);
       } else {
         // Handle API error response
         const errorMessage = response.message || 'Failed to add role. Please try again.';
         setError(errorMessage);
         console.error('API Error:', response);
       }
-      
+
     } catch (err: any) {
       console.error('Error adding role:', err);
       setError('An unexpected error occurred. Please try again.');
@@ -126,14 +123,14 @@ const RoleForm: React.FC = () => {
 
   const handleEditRole = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
-    
+
     if (!editingRole || !currentRole.trim()) {
       return;
     }
 
 
-    const roleExists = roles.some(role => 
-     
+    const roleExists = roles.some(role =>
+
       role.name.toLowerCase() === currentRole.trim().toLowerCase()
     );
 
@@ -147,16 +144,16 @@ const RoleForm: React.FC = () => {
     setSuccessMessage('');
 
     try {
-      const roleData = { 
+      const roleData = {
         id: parseInt(editingRole.id),
         role_name: currentRole.trim(),
       };
       const response = await editRoles(roleData);
-      
+
       if (response.success) {
         // Update local state
-        setRoles(prev => prev.map(role => 
-          role.id === editingRole.id 
+        setRoles(prev => prev.map(role =>
+          role.id === editingRole.id
             ? { ...role, name: roleData.role_name }
             : role
         ));
@@ -169,7 +166,7 @@ const RoleForm: React.FC = () => {
         setError(errorMessage);
         console.error('API Error:', response);
       }
-      
+
     } catch (err: any) {
       console.error('Error editing role:', err);
       setError('An unexpected error occurred. Please try again.');
@@ -186,7 +183,7 @@ const RoleForm: React.FC = () => {
     try {
       const roleData = { id: parseInt(roleId) };
       const response = await dltRoles(roleData);
-      
+
       if (response.success) {
         // Remove from local state
         const deletedRole = roles.find(role => role.id === roleId);
@@ -198,7 +195,7 @@ const RoleForm: React.FC = () => {
           loadRoles();
         }, 2000);
       }
-      
+
     } catch (err: any) {
       console.log('Error deleting role:', err);
     } finally {
@@ -224,7 +221,7 @@ const RoleForm: React.FC = () => {
     const { name, value } = e.target;
     if (name === 'roleName') {
       setCurrentRole(value);
-    } 
+    }
     if (error) setError('');
     if (successMessage) setSuccessMessage('');
   };
@@ -282,14 +279,14 @@ const RoleForm: React.FC = () => {
                       >
                         <Edit3 className="h-4 w-4" />
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => setShowDeleteConfirm(role.id)}
                         disabled={isLoading}
                         className="text-red-500 hover:text-red-700 transition-colors duration-200 p-1 rounded-full hover:bg-red-50 disabled:opacity-50"
                         title="Delete role"
                       >
                         <Trash2 className="h-4 w-4" />
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 </div>
@@ -319,7 +316,7 @@ const RoleForm: React.FC = () => {
               </>
             )}
           </h3>
-          
+
           <div className="space-y-4">
             {/* Error Message */}
             {error && (
@@ -348,9 +345,8 @@ const RoleForm: React.FC = () => {
                 value={currentRole}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                  error ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${error ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 placeholder="Enter role name (e.g., Admin, Manager, User)"
                 onKeyPress={(e) => e.key === 'Enter' && !isLoading && (editingRole ? handleEditRole(e) : handleAddRole(e))}
               />
@@ -362,11 +358,10 @@ const RoleForm: React.FC = () => {
                   <button
                     onClick={handleEditRole}
                     disabled={isLoading || !currentRole.trim()}
-                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      isLoading || !currentRole.trim()
+                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isLoading || !currentRole.trim()
                         ? 'bg-gray-400 cursor-not-allowed text-white'
                         : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
-                    }`}
+                      }`}
                   >
                     {isLoading ? (
                       <>
@@ -392,11 +387,10 @@ const RoleForm: React.FC = () => {
                 <button
                   onClick={handleAddRole}
                   disabled={isLoading || !currentRole.trim()}
-                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    isLoading || !currentRole.trim()
+                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isLoading || !currentRole.trim()
                       ? 'bg-gray-400 cursor-not-allowed text-white'
                       : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
-                  }`}
+                    }`}
                 >
                   {isLoading ? (
                     <>
@@ -422,7 +416,7 @@ const RoleForm: React.FC = () => {
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Confirm Delete</h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete the role 
+              Are you sure you want to delete the role
               <span className="font-medium">
                 {roles.find(r => r.id === showDeleteConfirm)?.name}
               </span>
