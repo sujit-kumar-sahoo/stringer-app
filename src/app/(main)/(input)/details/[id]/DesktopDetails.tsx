@@ -87,7 +87,8 @@ const DesktopStoryDetailView: React.FC = () => {
   const [editorData, setEditorData] = useState('')
   const [created, setCreated] = useState('')
   const [updated, setUpdated] = useState('')
-  const [status, setStatus] = useState('')
+  const [statusText, setStatusText] = useState('')
+  const [statusId, setStatusId] = useState('')
   const [version, setVersion] = useState('')
   const [selectedVersion, setSelectedVersion] = useState(1)
   useEffect(() => {
@@ -111,7 +112,8 @@ const DesktopStoryDetailView: React.FC = () => {
       setAttachments(data.attachments || [])
       setCreated(data.created_date || '')
       setUpdated(data.updated_date || '')
-      setStatus(data.status_text || 'draft')
+      setStatusText(data.status_text || 'draft')
+      setStatusId(data.status);
       const latestVersion = data.version_number || 1
       setVersion(latestVersion)
       setSelectedVersion(latestVersion)
@@ -138,7 +140,7 @@ const DesktopStoryDetailView: React.FC = () => {
       setAttachments(data.attachments || [])
       setCreated(data.created_date || '')
       setUpdated(data.updated_date || '')
-      setStatus(data.status_text || 'draft')
+      setStatusText(data.status_text || 'draft')
 
       // Close dropdown if needed
       setShowVersionDropdown(false)
@@ -336,7 +338,9 @@ const DesktopStoryDetailView: React.FC = () => {
     }
   }, [showVersionDropdown])
 
-  const handleReturnToReporter = async () => {
+
+  //=====================for input start========================//
+  const handleReturnToReporterFromInput = async () => {
     try {
       const param = { status: "7" };
       const response = await updateContentStatus(id, param);
@@ -354,7 +358,7 @@ const DesktopStoryDetailView: React.FC = () => {
     }
   };
 
-  const handleShare = async () => {
+  const handleMoveToOutput = async () => {
     try {
       const param = { status: "3" };
       await updateContentStatus(id, param);
@@ -366,11 +370,52 @@ const DesktopStoryDetailView: React.FC = () => {
       router.push(`/list/input/waitingInOutput`);
     }
   };
+  //=====================for input end========================//
+  //=====================for output start========================//
+  const handleReturnToReporterFromOutput = async () => {
+    try {
+      const param = { status: "11" };
+      const response = await updateContentStatus(id, param);
+
+      if (response?.data?.success === true) {
+        await refreshCounts();
+        router.push(`/update/${id}`);
+      } else {
+        router.push(`/list/input/waitingInOutput`);
+      }
+    } catch (error: any) {
+      console.error("Error:", error);
+      router.push(`/list/input/waitingInOutput`);
+    }
+  };
+
+  const handleReturnToInputFromOutput = async () => {
+    try {
+      const param = { status: "8" };
+      await updateContentStatus(id, param);
+      await refreshCounts();
+      router.push(`/list/input/outputToInput`);
+    } catch (error: any) {
+      console.error("Error:", error);
+      // No alert - just redirect to a fallback page or stay on current page
+      router.push(`/list/input/outputToInput`);
+    }
+  };
+  //=====================for output end========================//
 
   const handleLockEdit = async () => {
     try {
-      const param = { status: "9" };
-      await updateContentStatus(id, param);
+      if(user?.role_name === "ROLE_INPUT")
+      {
+        const param = { status: "9" };
+        await updateContentStatus(id, param);
+      }
+      if(user?.role_name === "ROLE_OUTPUT")
+      {
+        const param = { status: "10" };
+        await updateContentStatus(id, param);
+      }
+      
       await refreshCounts();
       router.push(`/update/${id}`);
     } catch (error: any) {
@@ -464,7 +509,9 @@ const DesktopStoryDetailView: React.FC = () => {
                   )}
                 </div>
 
-                {String(selectedVersion) === String(version) ? (
+
+                {user?.role_name === "ROLE_INPUT" && statusId == "2" ? (
+                  String(selectedVersion) === String(version) ? (
                   <button
                     type="button"
                     onClick={handleLockEdit}
@@ -483,7 +530,52 @@ const DesktopStoryDetailView: React.FC = () => {
                   <div className="p-2 text-gray-400 bg-gray-100 border-2 border-gray-300 rounded-md ml-4 inline-block cursor-not-allowed">
                     <PenTool size={16} />
                   </div>
-                )}
+                )
+                ) : null}
+                {user?.role_name === "ROLE_OUTPUT" && statusId == "3" ? (
+                  String(selectedVersion) === String(version) ? (
+                  <button
+                    type="button"
+                    onClick={handleLockEdit}
+                    className="relative group p-2 text-blue-600 hover:text-blue-800 bg-blue-200 hover:bg-blue-50 border-2 border-blue-500 rounded-md transition-colors ml-4 inline-flex items-center gap-1"
+                  >
+                    <Lock size={16} />
+                    <PenTool size={16} />
+
+                    {/* Tooltip */}
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
+                      Lock & Edit
+                    </span>
+
+                  </button>
+                ) : (
+                  <div className="p-2 text-gray-400 bg-gray-100 border-2 border-gray-300 rounded-md ml-4 inline-block cursor-not-allowed">
+                    <PenTool size={16} />
+                  </div>
+                )
+                ) : null}
+                {statusId == "1" ? (
+                  String(selectedVersion) === String(version) ? (
+                  <button
+                    type="button"
+                    onClick={handleLockEdit}
+                    className="relative group p-2 text-blue-600 hover:text-blue-800 bg-blue-200 hover:bg-blue-50 border-2 border-blue-500 rounded-md transition-colors ml-4 inline-flex items-center gap-1"
+                  >
+                    <Lock size={16} />
+                    <PenTool size={16} />
+
+                    {/* Tooltip */}
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
+                      Lock & Edit
+                    </span>
+
+                  </button>
+                ) : (
+                  <div className="p-2 text-gray-400 bg-gray-100 border-2 border-gray-300 rounded-md ml-4 inline-block cursor-not-allowed">
+                    <PenTool size={16} />
+                  </div>
+                )
+                ) : null}
               </div>
             </div>
 
@@ -517,30 +609,52 @@ const DesktopStoryDetailView: React.FC = () => {
                 >
                   Activities ({attachments?.length ?? 0})
                 </button>
-                <button
-                  onClick={() => scrollToSection('publishAt')}
-                  className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'publishAt'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                >
-                  Publish At
-                </button>
+                {user?.role_name !== "ROLE_STRINGER" && (
+                  <button
+                    onClick={() => scrollToSection('publishAt')}
+                    className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'publishAt'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                  >
+                    Publish At
+                  </button>
+                )}
               </nav>
 
               <div className="flex items-center space-x-2 pl-4">
-                <button
-                  onClick={handleReturnToReporter}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
-                >
-                  RETURN TO REPORTER
-                </button>
-                <button
-                  onClick={handleShare}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium transition-colors"
-                >
-                  MOVE TO OUTPUT
-                </button>
+                {user?.role_name === "ROLE_INPUT" && statusId=="2" && (
+                  <>
+                    <button
+                      onClick={handleReturnToReporterFromInput}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
+                    >
+                      RETURN TO REPORTER
+                    </button>
+                    <button
+                      onClick={handleMoveToOutput}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium transition-colors"
+                    >
+                      MOVE TO OUTPUT
+                    </button>
+                  </>
+                )}
+                {user?.role_name === "ROLE_OUTPUT" && statusId=="3" && (
+                  <>
+                    <button
+                      onClick={handleReturnToReporterFromOutput}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium transition-colors"
+                    >
+                      RETURN TO REPORTER
+                    </button>
+                    <button
+                      onClick={handleReturnToInputFromOutput}
+                      className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 text-sm font-medium transition-colors"
+                    >
+                      RETURN TO INPUT
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -581,8 +695,8 @@ const DesktopStoryDetailView: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">STATUS</h4>
-                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(status)}`}>
-                    {String(status || 'draft')}
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(statusText)}`}>
+                    {String(statusText || 'draft')}
                   </span>
                 </div>
               </div>
@@ -760,9 +874,11 @@ const DesktopStoryDetailView: React.FC = () => {
           </div>
 
           {/* Publish Section */}
+          {user?.role_name !== "ROLE_STRINGER" && (
           <div ref={publishAtRef} data-section="publishAt" className="bg-white shadow-sm border border-gray-200 scroll-mt-40 mb-4 rounded-lg">
             <PublishScheduleForm contentId={id} />
           </div>
+          )}
         </div>
       </div>
     </div>

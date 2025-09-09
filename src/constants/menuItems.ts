@@ -48,21 +48,15 @@ export const MAIN_MENU_ITEMS_STRINGER: MenuItem[] = [
     subItems: [
       { 
         id: 'input-listing', 
-        label: 'Input Wait List', 
+        label: 'Waiting In Input', 
         href: '/list/input/waitList', 
         countKey: 'waitList'
       },
       { 
         id: 'input-to-stringer', 
-        label: 'Input to Stringer', 
+        label: 'Return to Stringer', 
         href: '/list/input/inputToStringer', 
         countKey: 'inputToStringer' 
-      },
-      { 
-        id: 'waiting-in-output', 
-        label: 'Waiting In Output', 
-        href: '/list/input/waitingInOutput', 
-        countKey: 'waitingInOutput' 
       },
       { 
         id: 'draft', 
