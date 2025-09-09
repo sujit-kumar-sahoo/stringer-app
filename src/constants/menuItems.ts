@@ -36,9 +36,178 @@ export const MAIN_MENU_ITEMS_STRINGER: MenuItem[] = [
     href: '/dashboard',
     subItems: [
       { id: 'dashboard-input', label: 'Input', href: '/dashboard/input' },
-      { id: 'dashboard-output', label: 'Output', href: '/dashboard/output' },
       { id: 'dashboard-stringer', label: 'Stringer', href: '/dashboard/stringer' },
     ]
+  },
+  { 
+    id: 'input', 
+    icon: Database, 
+    label: 'Stringer', 
+    color: 'purple', 
+    href: '',
+    subItems: [
+      { 
+        id: 'input-listing', 
+        label: 'Input Wait List', 
+        href: '/list/input/waitList', 
+        countKey: 'waitList'
+      },
+      { 
+        id: 'input-to-stringer', 
+        label: 'Input to Stringer', 
+        href: '/list/input/inputToStringer', 
+        countKey: 'inputToStringer' 
+      },
+      { 
+        id: 'waiting-in-output', 
+        label: 'Waiting In Output', 
+        href: '/list/input/waitingInOutput', 
+        countKey: 'waitingInOutput' 
+      },
+      { 
+        id: 'draft', 
+        label: 'Draft', 
+        href: '/list/input/inputDraft', 
+        countKey: 'draft' 
+      }
+    ]
+  },
+  { 
+    id: 'input-create', 
+    icon: FileText, 
+    label: 'Create', 
+    color: 'emerald', 
+    href: '/create',
+  },
+];
+export const MAIN_MENU_ITEMS_INPUT: MenuItem[] = [
+  { 
+    id: 'dashboard', 
+    icon: FileText, 
+    label: 'Dashboard', 
+    color: 'emerald', 
+    href: '/dashboard',
+    subItems: [
+      { id: 'dashboard-input', label: 'Input', href: '/dashboard/input' },
+      { id: 'dashboard-stringer', label: 'Stringer', href: '/dashboard/stringer' },
+    ]
+  },
+  { 
+    id: 'input', 
+    icon: Database, 
+    label: 'Input', 
+    color: 'purple', 
+    href: '',
+    subItems: [
+      { 
+        id: 'input-listing', 
+        label: 'Input Wait List', 
+        href: '/list/input/waitList', 
+        countKey: 'waitList'
+      },
+      { 
+        id: 'input-wip', 
+        label: 'Input WIP', 
+        href: '/list/input/inputWip', 
+        countKey: 'inputWip' 
+      },
+      { 
+        id: 'output-to-input', 
+        label: 'Output to Input', 
+        href: '/list/input/outputToInput', 
+        countKey: 'outputToInput' 
+      },
+      { 
+        id: 'input-to-stringer', 
+        label: 'Input to Stringer', 
+        href: '/list/input/inputToStringer', 
+        countKey: 'inputToStringer' 
+      },
+      { 
+        id: 'waiting-in-output', 
+        label: 'Waiting In Output', 
+        href: '/list/input/waitingInOutput', 
+        countKey: 'waitingInOutput' 
+      },
+      { 
+        id: 'published', 
+        label: 'Published', 
+        href: '/list/input/published', 
+        countKey: 'published' 
+      },
+      { 
+        id: 'draft', 
+        label: 'Draft', 
+        href: '/list/input/inputDraft', 
+        countKey: 'draft' 
+      }
+    ]
+  },
+  { 
+    id: 'input-create', 
+    icon: FileText, 
+    label: 'Create', 
+    color: 'emerald', 
+    href: '/create',
+  },
+];
+export const MAIN_MENU_ITEMS_OUTPUT: MenuItem[] = [
+  { 
+    id: 'dashboard', 
+    icon: FileText, 
+    label: 'Dashboard', 
+    color: 'emerald', 
+    href: '/dashboard',
+    subItems: [
+      { id: 'dashboard-input', label: 'Input', href: '/dashboard/input' },
+      { id: 'dashboard-stringer', label: 'Stringer', href: '/dashboard/stringer' },
+    ]
+  },
+  { 
+    id: 'input', 
+    icon: Database, 
+    label: 'Output', 
+    color: 'purple', 
+    href: '',
+    subItems: [
+      { 
+        id: 'waiting-in-output', 
+        label: 'Waiting In Output', 
+        href: '/list/input/waitingInOutput', 
+        countKey: 'waitingInOutput' 
+      },
+      { 
+        id: 'output-wip', 
+        label: 'Output WIP', 
+        href: '/list/input/outputWip', 
+        countKey: 'outputWip' 
+      },
+      { 
+        id: 'output-to-input', 
+        label: 'Output to Input', 
+        href: '/list/input/outputToInput', 
+        countKey: 'outputToInput' 
+      },
+      { 
+        id: 'output-to-stringer', 
+        label: 'Output to Stringer', 
+        href: '/list/input/outputToStringer', 
+        countKey: 'outputToStringer' 
+      },
+      { 
+        id: 'draft', 
+        label: 'Draft', 
+        href: '/list/input/inputDraft', 
+        countKey: 'draft' 
+      }
+    ]
+  },
+  { 
+    id: 'input-create', 
+    icon: FileText, 
+    label: 'Create', 
+    color: 'emerald', 
+    href: '/create',
   },
 ];
 export const MAIN_MENU_ITEMS_ADMIN: MenuItem[] = [

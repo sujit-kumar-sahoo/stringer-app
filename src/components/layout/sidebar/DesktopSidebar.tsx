@@ -16,6 +16,8 @@ import { useCount } from "../../../context/CountContext";
 import {
   MAIN_MENU_ITEMS_STRINGER,
   MAIN_MENU_ITEMS_ADMIN,
+  MAIN_MENU_ITEMS_INPUT,
+  MAIN_MENU_ITEMS_OUTPUT,
   MenuItem,
   getColorClasses,
   getActiveIndicatorClasses,
@@ -51,6 +53,14 @@ const DesktopSidebar: React.FC = () => {
     if(user?.role_name === "ROLE_STRINGER") 
     {
       MAIN_MENU_ITEMS = MAIN_MENU_ITEMS_STRINGER;
+    }
+    else if(user?.role_name === "ROLE_INPUT") 
+    {
+      MAIN_MENU_ITEMS = MAIN_MENU_ITEMS_INPUT;
+    }
+    else if(user?.role_name === "ROLE_OUTPUT") 
+    {
+      MAIN_MENU_ITEMS = MAIN_MENU_ITEMS_OUTPUT;
     }
     else if(user?.role_name === "ROLE_ADMIN") 
     {
