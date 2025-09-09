@@ -14,11 +14,15 @@ import { useSidebar } from "../../../context/SidebarContext";
 import { useCount } from "../../../context/CountContext";
 
 import {
-  MAIN_MENU_ITEMS,
+  MAIN_MENU_ITEMS_STRINGER,
+  MAIN_MENU_ITEMS_ADMIN,
   MenuItem,
   getColorClasses,
   getActiveIndicatorClasses,
 } from "@/constants/menuItems";
+
+import { useRouter } from 'next/navigation';
+import useAuth from "@/hooks/useAuth";
 
 interface SidebarItemProps {
   item: MenuItem;
@@ -35,6 +39,32 @@ interface SectionHeaderProps {
 }
 
 const DesktopSidebar: React.FC = () => {
+
+  /* ================ for permition start ================= */
+    const { user } = useAuth();
+    const router = useRouter();
+    console.log('============sujit=============');
+    console.log(user);
+    console.log('============sujit=============');
+    let MAIN_MENU_ITEMS: MenuItem[] = [];
+
+    if(user?.role_name === "ROLE_STRINGER") 
+    {
+      MAIN_MENU_ITEMS = MAIN_MENU_ITEMS_STRINGER;
+    }
+    else if(user?.role_name === "ROLE_ADMIN") 
+    {
+      MAIN_MENU_ITEMS = MAIN_MENU_ITEMS_ADMIN;
+    }
+    /*useEffect(() => {
+        const permissions = user?.role_data?.route?.MENU?.["Stringer"]?.["/stories/list"] || [];
+        if (!permissions.includes("add")) {
+        router.push('/');
+        }
+    }, [user, router]);*/
+  /* ================ for permition end ================= */
+
+
   const { isOpen, toggleSidebar } = useSidebar();
   const { counts, isLoading, refreshCounts } = useCount();
   const pathname = usePathname();

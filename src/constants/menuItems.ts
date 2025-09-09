@@ -27,7 +27,21 @@ export interface MenuItem {
 }
 
 // Menu Items Configuration
-export const MAIN_MENU_ITEMS: MenuItem[] = [
+export const MAIN_MENU_ITEMS_STRINGER: MenuItem[] = [
+  { 
+    id: 'dashboard', 
+    icon: FileText, 
+    label: 'Dashboard', 
+    color: 'emerald', 
+    href: '/dashboard',
+    subItems: [
+      { id: 'dashboard-input', label: 'Input', href: '/dashboard/input' },
+      { id: 'dashboard-output', label: 'Output', href: '/dashboard/output' },
+      { id: 'dashboard-stringer', label: 'Stringer', href: '/dashboard/stringer' },
+    ]
+  },
+];
+export const MAIN_MENU_ITEMS_ADMIN: MenuItem[] = [
   { 
     id: 'dashboard', 
     icon: FileText, 

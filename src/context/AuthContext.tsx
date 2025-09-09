@@ -4,8 +4,12 @@ import { useRouter } from 'next/navigation';
 import { jwtDecode } from "jwt-decode";
 
 type UserType = {
+  user_id: string;
+  email: string;
   name: string;
-  role: string;
+  phone: string;
+  role_id: string;
+  role_name: string;
   role_data: Record<string, any>; 
 } | null;
 
@@ -36,8 +40,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           const decodedToken = jwtDecode(token);
           setUser({ 
-            name: (decodedToken as any)?.profile_name || "Guest",
-            role: (decodedToken as any)?.role || "Administrator",
+            user_id: (decodedToken as any)?.user_id || "0",
+            email: (decodedToken as any)?.email || "",
+            name: (decodedToken as any)?.name || "",
+            phone: (decodedToken as any)?.phone || "",
+            role_id: (decodedToken as any)?.role_id || "",
+            role_name: (decodedToken as any)?.role_name || "",
             role_data: (decodedToken as any)?.role_data || {},
           });
         } catch (error) {
@@ -62,8 +70,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const decodedToken = jwtDecode(token);
       setUser({ 
-        name: (decodedToken as any)?.profile_name || "Guest",
-        role: (decodedToken as any)?.role || "Administrator",
+        user_id: (decodedToken as any)?.user_id || "Guest",
+        email: (decodedToken as any)?.email || "",
+        name: (decodedToken as any)?.name || "",
+        phone: (decodedToken as any)?.phone || "",
+        role_id: (decodedToken as any)?.role_id || "",
+        role_name: (decodedToken as any)?.role_name || "",
         role_data: (decodedToken as any)?.role_data || {},
       });
     } catch (error) {
