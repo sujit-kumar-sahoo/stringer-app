@@ -7,6 +7,15 @@ import { useParams } from 'next/navigation';
 import PublishScheduleForm from "../../../../../components/ui/PublishScheduleForm"
 import { useRouter } from "next/navigation";
 import { useCount } from '@/context/CountContext'
+import { addComments } from '@/services/activitiesService'
+interface Comment {
+  comment_text: string
+  content_id: number
+  created_by: number
+  created_date: string
+  id: number
+  created_name?: string
+}
 
 interface StoryData {
   activities: Array<{
@@ -15,6 +24,7 @@ interface StoryData {
     action: string
     avatar: string
   }>
+  comments: Comment[]
 }
 
 interface Location {
@@ -37,34 +47,10 @@ const DesktopStoryDetailView: React.FC = () => {
 
   const [showVersionDropdown, setShowVersionDropdown] = useState(false)
   const [activities, setActivities] = useState<StoryData>({
-    activities: [
-      {
-        id: '1',
-        user: 'You',
-        action: 'updated story to version 3',
-        avatar: 'Y'
-      },
-      {
-        id: '2',
-        user: 'Editor',
-        action: 'reviewed and provided feedback',
-        avatar: 'E'
-      },
-      {
-        id: '3',
-        user: 'You',
-        action: 'updated story to version 2',
-        avatar: 'Y'
-      },
-      {
-        id: '4',
-        user: 'You',
-        action: 'created story',
-        avatar: 'Y'
-      }
-    ]
+    activities: [], // Remove dummy data
+    comments: [] // Will be populated from API
   })
-  // Refs for scrolling
+
   const overviewRef = useRef<HTMLDivElement>(null)
   const attachmentsRef = useRef<HTMLDivElement>(null)
   const activitiesRef = useRef<HTMLDivElement>(null)
@@ -73,6 +59,8 @@ const DesktopStoryDetailView: React.FC = () => {
   const tabContainerRef = useRef<HTMLDivElement>(null)
 
   // State variables
+  const [newComment, setNewComment] = useState('')
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [priority, setPriority] = useState('')
   const [selectedContentType, setSelectedContentType] = useState('')
   const [title, setTitle] = useState('')
@@ -111,6 +99,7 @@ const DesktopStoryDetailView: React.FC = () => {
       const latestVersion = data.version_number || 1
       setVersion(latestVersion)
       setSelectedVersion(latestVersion)
+      setActivities(prev => ({ ...prev, comments: data.comments || [] }))
     } catch (error) {
       console.error('Error fetching content:', error)
     }
@@ -184,7 +173,39 @@ const DesktopStoryDetailView: React.FC = () => {
     if (isVideo(mime)) return 'bg-purple-500'
     return 'bg-gray-500'
   }
+  const handleAddComment = async () => {
+    if (!newComment.trim() || isSubmittingComment) return
 
+    setIsSubmittingComment(true)
+    try {
+      const commentData = {
+        content_id: parseInt(id),
+        comment_text: newComment.trim()
+      }
+
+      const response = await addComments(commentData)
+
+      if (response?.data) {
+        // Refresh the content to get updated comments
+        await fetchContentById()
+        setNewComment('')
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error)
+    } finally {
+      setIsSubmittingComment(false)
+    }
+  }
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+
+    if (diffInHours < 1) return 'Just now'
+    if (diffInHours < 24) return `${Math.floor(diffInHours)} hours ago`
+    if (diffInHours < 48) return 'Yesterday'
+    return date.toLocaleDateString()
+  }
   const getStatusColor = (status: string) => {
     const statusStr = String(status || '').toLowerCase()
     switch (statusStr) {
@@ -617,36 +638,109 @@ const DesktopStoryDetailView: React.FC = () => {
             </div>
           </div>
           {/* Activities Section */}
+          {/* Activities Section with Conversation Design */}
+          {/* Activities Section with Comments */}
           <div ref={activitiesRef} data-section="activities" className="bg-white shadow-sm border border-gray-200 scroll-mt-40 mb-4 rounded-lg">
             <div className="p-4">
               <h2 className="text-lg font-semibold text-gray-800 mb-6 border-b border-gray-200 pb-2 flex items-center">
-                <span className="mr-2">📈</span>
-                Activities ({activities.activities.length})
+                <span className="mr-2">💬</span>
+                Comments ({activities.comments.length})
               </h2>
-              <div className="space-y-4 pb-10">
-                {activities.activities.map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                    <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                      {activity.avatar}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-900">
-                        <span className="font-medium">{activity.user}</span>
-                        <span className="text-gray-600 ml-1">{activity.action}</span>
+
+              {/* Comments Container */}
+              <div className="max-h-96 overflow-y-auto space-y-4 pb-4">
+                {activities.comments.map((comment, index) => {
+                  const isCurrentUser = comment.created_by === 14; // Replace with actual current user ID
+                  const isConsecutive = index > 0 && activities.comments[index - 1].created_by === comment.created_by;
+
+                  return (
+                    <div
+                      key={comment.id}
+                      className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} ${isConsecutive ? 'mt-1' : 'mt-4'}`}
+                    >
+                      {/* Left Avatar (for others) */}
+                      {!isCurrentUser && (
+                        <div className="flex-shrink-0 mr-3">
+                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                            {(comment.created_name || 'U').charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Message Bubble */}
+                      <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${isCurrentUser
+                          ? 'bg-blue-500 text-white rounded-br-md'
+                          : 'bg-gray-100 text-gray-900 rounded-bl-md'
+                        }`}>
+                        {/* User name (only show for first message in sequence) */}
+                        {!isConsecutive && !isCurrentUser && (
+                          <div className="text-xs font-semibold text-gray-600 mb-1">
+                            {comment.created_name || `User ${comment.created_by}`}
+                          </div>
+                        )}
+
+                        {/* Message content */}
+                        <div className="text-sm">
+                          {comment.comment_text}
+                        </div>
+
+                        {/* Timestamp */}
+                        <div className={`text-xs mt-1 ${isCurrentUser ? 'text-blue-100' : 'text-gray-500'
+                          }`}>
+                          {formatDate(comment.created_date)}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Just now
-                      </div>
+
+                      {/* Right Avatar (for current user) */}
+                      {isCurrentUser && (
+                        <div className="flex-shrink-0 ml-3">
+                          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                            You
+                          </div>
+                        </div>
+                      )}
                     </div>
+                  );
+                })}
+              </div>
+
+              {/* Empty state */}
+              {activities.comments.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                    💬
                   </div>
-                ))}
+                  No comments yet
+                </div>
+              )}
+
+              {/* Message input area */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
+                    placeholder="Add a comment..."
+                    disabled={isSubmittingComment}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  />
+                  <button
+                    onClick={handleAddComment}
+                    disabled={!newComment.trim() || isSubmittingComment}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {isSubmittingComment ? 'Sending...' : 'Send'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Publish Section */}
           <div ref={publishAtRef} data-section="publishAt" className="bg-white shadow-sm border border-gray-200 scroll-mt-40 mb-4 rounded-lg">
-           <PublishScheduleForm contentId={id} />
+            <PublishScheduleForm contentId={id} />
           </div>
         </div>
       </div>
