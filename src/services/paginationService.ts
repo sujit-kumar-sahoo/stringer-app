@@ -15,6 +15,7 @@ export interface Activity {
   attachments: any[]
   content_type: number
   content_type_text: string
+  content_price: string
 }
 
 export interface ApiResponse {
@@ -26,82 +27,103 @@ export interface ApiResponse {
 }
 
 export interface FetchActivitiesParams {
-  page: number;
-  limit: number;
+  page?: number;
+  limit?: number;
   status: number;
   appliedSearchTerm?: string
   dateFrom?: string
   dateTo?: string
   selectedLocations?: string[]
   selectedPriorities?: string[]
-  selectedCreatedBy?: string[] 
-  selectedContentTypes?: string[] 
+  selectedCreatedBy?: string[]
+  selectedContentTypes?: string[]
+  fetchLatestMonth?: boolean; // New parameter to control initial fetch
 }
+
+// Helper function to get date range for the latest month
+const getLatestMonthRange = () => {
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  
+  return {
+    from: firstDayOfMonth.toISOString().split('T')[0],
+    to: lastDayOfMonth.toISOString().split('T')[0]
+  };
+};
 
 export const fetchActivities = async (params: FetchActivitiesParams): Promise<ApiResponse> => {
   try {
-    const { 
-      page, 
-      limit,
-      status, 
-      appliedSearchTerm, 
-      dateFrom, 
-      dateTo, 
-      selectedLocations, 
+    const {
+      page = 1,
+      limit = 12,
+      status,
+      appliedSearchTerm,
+      dateFrom,
+      dateTo,
+      selectedLocations,
       selectedPriorities,
       selectedCreatedBy,
-      selectedContentTypes
+      selectedContentTypes,
+      fetchLatestMonth = false
     } = params
-    
-    const offset = (page - 1) * limit
-    
-    const queryParts = [
-      `status=${status}`, 
-      `limit=${limit}`,
-      `offset=${offset}`
-    ]
-   
+
+    const queryParts = [`status=${status}`];
+
+    // If fetching latest month data initially, don't use pagination
+    if (!fetchLatestMonth) {
+      const offset = (page - 1) * limit;
+      queryParts.push(`limit=${limit}`, `offset=${offset}`);
+    }
+
+    // Handle date range - if fetchLatestMonth is true and no specific dates are provided
+    if (fetchLatestMonth && !dateFrom && !dateTo) {
+      const { from, to } = getLatestMonthRange();
+      queryParts.push(`from_date=${from}`, `to_date=${to}`);
+    } else {
+      if (dateFrom) {
+        queryParts.push(`from_date=${dateFrom}`);
+      }
+      if (dateTo) {
+        queryParts.push(`to_date=${dateTo}`);
+      }
+    }
+
     if (appliedSearchTerm) {
-      queryParts.push(`headline=${encodeURIComponent(appliedSearchTerm)}`)
+      queryParts.push(`headline=${encodeURIComponent(appliedSearchTerm)}`);
     }
-    
-    if (dateFrom) {
-      queryParts.push(`from_date=${dateFrom}`)
-    }
-    if (dateTo) {
-      queryParts.push(`to_date=${dateTo}`)
-    }
+
     if (selectedLocations && selectedLocations.length > 0) {
-      queryParts.push(`location=${selectedLocations.join(',')}`)
+      queryParts.push(`location=${selectedLocations.join(',')}`);
     }
     if (selectedPriorities && selectedPriorities.length > 0) {
-      queryParts.push(`priority=${selectedPriorities.join(',')}`)
+      queryParts.push(`priority=${selectedPriorities.join(',')}`);
     }
     if (selectedCreatedBy && selectedCreatedBy.length > 0) {
-      queryParts.push(`created_by=${selectedCreatedBy.join(',')}`)
+      queryParts.push(`created_by=${selectedCreatedBy.join(',')}`);
     }
     if (selectedContentTypes && selectedContentTypes.length > 0) {
-      queryParts.push(`content_type=${selectedContentTypes.join(',')}`)
+      queryParts.push(`content_type=${selectedContentTypes.join(',')}`);
     }
-    
-    const queryString = queryParts.join('&')
-    console.log('API URL:', `/api/content/?${queryString}`) 
-    
+
+    const queryString = queryParts.join('&');
+    console.log('API URL:', `/api/content/?${queryString}`);
+
     const response = await api.get(`/api/content/?${queryString}`, {
       headers: {
         'Content-Type': 'application/json',
       },
-    })
-    
-    return response.data
-    
+    });
+
+    return response.data;
+
   } catch (error: any) {
-    const errorMessage = error.response?.data?.detail || 
-                        error.response?.data?.message || 
-                        error.message || 
-                        'Failed to fetch data'
-    
-    console.error('Error fetching activities:', error)
-    throw new Error(errorMessage)
+    const errorMessage = error.response?.data?.detail ||
+                        error.response?.data?.message ||
+                        error.message ||
+                        'Failed to fetch data';
+
+    console.error('Error fetching activities:', error);
+    throw new Error(errorMessage);
   }
 }
