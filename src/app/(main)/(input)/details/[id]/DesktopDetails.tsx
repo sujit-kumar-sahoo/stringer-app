@@ -8,6 +8,8 @@ import PublishScheduleForm from "../../../../../components/ui/PublishScheduleFor
 import { useRouter } from "next/navigation";
 import { useCount } from '@/context/CountContext'
 import { addComments } from '@/services/activitiesService'
+import useAuth from "@/hooks/useAuth";
+
 interface Comment {
   comment_text: string
   content_id: number
@@ -38,8 +40,22 @@ interface Attachment {
 }
 
 const DesktopStoryDetailView: React.FC = () => {
-  const { refreshCounts } = useCount();
+  /* ================ for permition start ================= */
+  const { user } = useAuth();
   const router = useRouter();
+  console.log('============sujit=============');
+  console.log(user);
+  console.log('============sujit=============');
+
+  /*useEffect(() => {
+      const permissions = user?.role_data?.route?.MENU?.["Stringer"]?.["/stories/list"] || [];
+      if (!permissions.includes("add")) {
+      router.push('/');
+      }
+  }, [user, router]);*/
+  /* ================ for permition end ================= */
+  const { refreshCounts } = useCount();
+
   const params = useParams();
   const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
@@ -368,14 +384,14 @@ const DesktopStoryDetailView: React.FC = () => {
   return (
     <div className="w-full bg-gray-50 h-screen overflow-hidden flex flex-col">
       <style jsx>{`
-        .scrollbar-hidden {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        .scrollbar-hidden::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
+          .scrollbar-hidden {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+          .scrollbar-hidden::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
 
       {/* Desktop Tab Container */}
       <div
@@ -637,8 +653,7 @@ const DesktopStoryDetailView: React.FC = () => {
               )}
             </div>
           </div>
-          {/* Activities Section */}
-          {/* Activities Section with Conversation Design */}
+
           {/* Activities Section with Comments */}
           <div ref={activitiesRef} data-section="activities" className="bg-white shadow-sm border border-gray-200 scroll-mt-40 mb-4 rounded-lg">
             <div className="p-4">
@@ -648,9 +663,10 @@ const DesktopStoryDetailView: React.FC = () => {
               </h2>
 
               {/* Comments Container */}
-              <div className="max-h-96 overflow-y-auto space-y-4 pb-4">
+              <div className="max-h-56 overflow-y-auto space-y-4 pb-4">
                 {activities.comments.map((comment, index) => {
-                  const isCurrentUser = comment.created_by === 14; // Replace with actual current user ID
+                  // Fixed: Use === to check if comment belongs to current user
+                  const isCurrentUser = comment.created_by === user.user_id;
                   const isConsecutive = index > 0 && activities.comments[index - 1].created_by === comment.created_by;
 
                   return (
@@ -669,8 +685,8 @@ const DesktopStoryDetailView: React.FC = () => {
 
                       {/* Message Bubble */}
                       <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${isCurrentUser
-                          ? 'bg-blue-500 text-white rounded-br-md'
-                          : 'bg-gray-100 text-gray-900 rounded-bl-md'
+                        ? 'bg-blue-500 text-white rounded-br-md'
+                        : 'bg-gray-100 text-gray-900 rounded-bl-md'
                         }`}>
                         {/* User name (only show for first message in sequence) */}
                         {!isConsecutive && !isCurrentUser && (
@@ -716,20 +732,25 @@ const DesktopStoryDetailView: React.FC = () => {
 
               {/* Message input area */}
               <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
+                <div className="flex items-start space-x-2">
+                  <textarea
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleAddComment();
+                      }
+                    }}
                     placeholder="Add a comment..."
                     disabled={isSubmittingComment}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    rows={2}
+                    className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 resize-none"
                   />
                   <button
                     onClick={handleAddComment}
                     disabled={!newComment.trim() || isSubmittingComment}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed mt-1"
                   >
                     {isSubmittingComment ? 'Sending...' : 'Send'}
                   </button>
