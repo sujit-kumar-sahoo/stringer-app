@@ -766,7 +766,7 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
           </div>
         )}
         {totalRecords > 0 && (
-          <div className="fixed bottom-5 right-0 transform  z-50 max-w-7xl w-full flex justify-center pointer-events-none">
+          <div className="fixed bottom-5 right-16 transform z-50 max-w-7xl w-full flex justify-end pointer-events-none">
             <div className="pointer-events-auto">
               <Pagination
                 offset={(currentPage - 1) * limit}

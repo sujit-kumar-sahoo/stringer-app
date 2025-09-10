@@ -108,7 +108,7 @@ const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className="border border-red-500  rounded-2xl shadow-lg">
+    <div className="border border-red-500  rounded-xl shadow-lg">
       
       {/* Pagination controls */}
       <div className={`inline-flex items-center bg-white rounded-full shadow-sm px-1 py-1 ${className}`}>
