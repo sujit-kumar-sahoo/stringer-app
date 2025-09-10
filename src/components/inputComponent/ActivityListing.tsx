@@ -10,7 +10,8 @@ import React, { useState, useEffect } from 'react'
 import { ChevronDown, Search, Grid3X3, List, MapPin, Clock, FileText, AlertCircle, Image, Video, Headphones, File, Lock, Calendar, X , Image as ImageIcon} from 'lucide-react'
 import Pagination from '@/components/ui/pagination';
 import { fetchActivities, Activity, FetchActivitiesParams } from '@/services/paginationService';
-
+import { useRouter } from "next/navigation";
+import useAuth from "@/hooks/useAuth";
 interface ActivityListingProps {
   status: any;
   countKey: keyof CountData; 
@@ -18,10 +19,26 @@ interface ActivityListingProps {
 }
 
 const ActivityListing: React.FC<ActivityListingProps> = ({
+
+  
   status,
   countKey
  
 }) => {
+    /* ================ for permition start ================= */
+  const { user } = useAuth();
+  const router = useRouter();
+  console.log('============sujit=============');
+  console.log(user);
+  console.log('============sujit=============');
+
+  /*useEffect(() => {
+      const permissions = user?.role_data?.route?.MENU?.["Stringer"]?.["/stories/list"] || [];
+      if (!permissions.includes("add")) {
+      router.push('/');
+      }
+  }, [user, router]);*/
+  /* ================ for permition end ================= */
   const { updateCount } = useCount();
   const [searchTerm, setSearchTerm] = useState('')
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('')
@@ -604,7 +621,7 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
                   </div>
                 ) : null}
 
-                {activity.locked ? (
+                {activity.locked && user.user_id!= activity.lock.locked_by ? (
                   <div className="absolute inset-0 bg-gray-500 bg-opacity-30 flex flex-col items-center justify-center z-10">
                     <div className="bg-white p-4 rounded-full shadow-lg mb-10">
                       <Lock size={32} className="text-gray-600" />
@@ -636,7 +653,7 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
                   </div>
                 ) : null}
 
-                <div className={`p-4 pt-4 ${activity.locked ? 'opacity-70' : ''}`}>
+                <div className={`p-4 pt-4 ${activity.locked && user.user_id!= activity.lock.locked_by ? 'opacity-70' : ''}`}>
                   <div
                     className="flex items-start gap-3 mb-3"
                     style={{
@@ -723,7 +740,7 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
 
             return (
               <div key={activity.id}>
-                {activity.locked ? (
+                {activity.locked && user.user_id!= activity.lock.locked_by ? (
                   <div className={`bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-all duration-200 overflow-hidden relative`}>
                     {cardContent}
                   </div>

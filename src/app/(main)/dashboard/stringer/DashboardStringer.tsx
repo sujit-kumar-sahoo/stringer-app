@@ -34,19 +34,27 @@ const Dashboardstringer: React.FC = () => {
   const [totalRecords, setTotalRecords] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [limit] = useState(12)
-  const [isInitialLoad, setIsInitialLoad] = useState(true) // Track if this is the first load
+  const [isInitialLoad, setIsInitialLoad] = useState(true) 
 
-  // Helper function to get current month date range
-  const getCurrentMonthRange = () => {
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+// Helper function to get current month date range (timezone-safe)
+const getCurrentMonthRange = () => {
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    return {
-      from: firstDayOfMonth.toISOString().split('T')[0],
-      to: lastDayOfMonth.toISOString().split('T')[0]
-    };
+  // Format dates without timezone conversion
+  const formatDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
+
+  return {
+    from: formatDate(firstDayOfMonth),
+    to: formatDate(lastDayOfMonth)
+  };
+};
 
   const fetchLocations = async () => {
     try {
@@ -237,7 +245,7 @@ const Dashboardstringer: React.FC = () => {
         ? prev.filter(l => l !== location)
         : [...prev, location]
     )
-    setIsInitialLoad(false) 
+    setIsInitialLoad(false)
   }
 
   const togglePrioritySelection = (priority: string) => {
@@ -337,7 +345,7 @@ const Dashboardstringer: React.FC = () => {
                   setDateFrom('')
                   setDateTo('')
                   setOpenDropdown(null)
-                  setIsInitialLoad(true) // Reset to show current month data
+                  setIsInitialLoad(true)
                 }}
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
@@ -402,7 +410,7 @@ const Dashboardstringer: React.FC = () => {
           {/* Filters and Controls */}
           <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4">
             <div className="flex flex-col gap-4">
-             {/* Filter Dropdowns */}
+              {/* Filter Dropdowns */}
               <div className="flex flex-wrap gap-2 sm:gap-3 justify-between">
                 <div className='flex flex-wrap gap-2 sm:gap-3'>
                   <DateRangeSelector />
@@ -549,7 +557,7 @@ const Dashboardstringer: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-3 lg:px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900 max-w-xs lg:max-w-sm xl:max-w-md">
+                        <div className="text-sm font-medium text-gray-900 max-w-xs lg:max-w-sm xl:max-w-md line-clamp-3">
                           {activity.headline}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
@@ -558,7 +566,7 @@ const Dashboardstringer: React.FC = () => {
                       </td>
                       <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
                         <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200">
-                          <span className="text-xs mr-1">$</span>
+
                           {activity.content_price}
                         </div>
                       </td>

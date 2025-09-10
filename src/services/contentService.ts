@@ -201,3 +201,53 @@ export const updateContentStatus = async (
     };
   }
 };
+export const updateContentLock = async (
+  id: any,
+  params?: Record<string, string>
+): Promise<ApiResponse> => {
+  try {
+    const response = await api.put(`/api/content/Lock/${id}`, params, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message:
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        "Error updating content status.",
+    };
+  }
+};
+export const updateContentunLock = async (
+  id: any,
+  params?: Record<string, string>
+): Promise<ApiResponse> => {
+  try {
+    const response = await api.put(`/api/content/unLock/${id}`, params, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message:
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        "Error updating content status.",
+    };
+  }
+};
