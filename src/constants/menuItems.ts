@@ -1,7 +1,10 @@
 import { 
-  FileText,
+ CirclePlus,
   LucideIcon,
   Database,
+  LayoutDashboard,
+  FileStack,
+  FolderOpen
 } from 'lucide-react';
 import { CountData } from '../context/CountContext';
 
@@ -30,7 +33,7 @@ export interface MenuItem {
 export const MAIN_MENU_ITEMS_STRINGER: MenuItem[] = [
   { 
     id: 'dashboard', 
-    icon: FileText, 
+    icon: LayoutDashboard, 
     label: 'Dashboard', 
     color: 'emerald', 
     href: '/dashboard',
@@ -68,7 +71,7 @@ export const MAIN_MENU_ITEMS_STRINGER: MenuItem[] = [
   },
   { 
     id: 'input-create', 
-    icon: FileText, 
+    icon: CirclePlus, 
     label: 'Create', 
     color: 'emerald', 
     href: '/create',
@@ -77,7 +80,7 @@ export const MAIN_MENU_ITEMS_STRINGER: MenuItem[] = [
 export const MAIN_MENU_ITEMS_INPUT: MenuItem[] = [
   { 
     id: 'dashboard', 
-    icon: FileText, 
+    icon: LayoutDashboard, 
     label: 'Dashboard', 
     color: 'emerald', 
     href: '/dashboard',
@@ -139,7 +142,7 @@ export const MAIN_MENU_ITEMS_INPUT: MenuItem[] = [
   },
   { 
     id: 'input-create', 
-    icon: FileText, 
+    icon: CirclePlus, 
     label: 'Create', 
     color: 'emerald', 
     href: '/create',
@@ -148,7 +151,7 @@ export const MAIN_MENU_ITEMS_INPUT: MenuItem[] = [
 export const MAIN_MENU_ITEMS_OUTPUT: MenuItem[] = [
   { 
     id: 'dashboard', 
-    icon: FileText, 
+    icon: LayoutDashboard, 
     label: 'Dashboard', 
     color: 'emerald', 
     href: '/dashboard',
@@ -198,7 +201,7 @@ export const MAIN_MENU_ITEMS_OUTPUT: MenuItem[] = [
   },
   { 
     id: 'input-create', 
-    icon: FileText, 
+    icon: CirclePlus, 
     label: 'Create', 
     color: 'emerald', 
     href: '/create',
@@ -207,7 +210,7 @@ export const MAIN_MENU_ITEMS_OUTPUT: MenuItem[] = [
 export const MAIN_MENU_ITEMS_ADMIN: MenuItem[] = [
   { 
     id: 'dashboard', 
-    icon: FileText, 
+    icon: LayoutDashboard, 
     label: 'Dashboard', 
     color: 'emerald', 
     href: '/dashboard',
@@ -271,21 +274,21 @@ export const MAIN_MENU_ITEMS_ADMIN: MenuItem[] = [
   },
   { 
     id: 'input-create', 
-    icon: FileText, 
+    icon: CirclePlus, 
     label: 'Create', 
     color: 'emerald', 
     href: '/create',
   },
   { 
     id: 'input-activity', 
-    icon: FileText, 
+    icon: FileStack, 
     label: 'Activity log', 
     color: 'emerald', 
     href: '/activity-log',
   },
   {
   id: 'master', 
-    icon: FileText, 
+    icon: FolderOpen, 
     label: 'Master', 
     color: 'emerald', 
     href: '/master',

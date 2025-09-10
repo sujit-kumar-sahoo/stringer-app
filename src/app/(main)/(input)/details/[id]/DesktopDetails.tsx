@@ -18,6 +18,7 @@ interface Comment {
   created_date: string
   id: number
   created_name?: string
+  user_name?: string
 }
 
 interface StoryData {
@@ -893,7 +894,7 @@ const DesktopStoryDetailView: React.FC = () => {
               {/* Comments Container */}
               <div className="max-h-56 overflow-y-auto space-y-4 pb-4">
                 {activities.comments.map((comment, index) => {
-                  // Fixed: Use === to check if comment belongs to current user
+                  
                   const isCurrentUser = comment.created_by === user.user_id;
                   const isConsecutive = index > 0 && activities.comments[index - 1].created_by === comment.created_by;
 
@@ -906,7 +907,7 @@ const DesktopStoryDetailView: React.FC = () => {
                       {!isCurrentUser && (
                         <div className="flex-shrink-0 mr-3">
                           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                            {(comment.created_name || 'U').charAt(0).toUpperCase()}
+                            {(comment.user_name || 'U').charAt(0).toUpperCase()}
                           </div>
                         </div>
                       )}
@@ -917,11 +918,7 @@ const DesktopStoryDetailView: React.FC = () => {
                         : 'bg-gray-100 text-gray-900 rounded-bl-md'
                         }`}>
                         {/* User name (only show for first message in sequence) */}
-                        {!isConsecutive && !isCurrentUser && (
-                          <div className="text-xs font-semibold text-gray-600 mb-1">
-                            {comment.created_name || `User ${comment.created_by}`}
-                          </div>
-                        )}
+                       
 
                         {/* Message content */}
                         <div className="text-sm">
@@ -931,7 +928,7 @@ const DesktopStoryDetailView: React.FC = () => {
                         {/* Timestamp */}
                         <div className={`text-xs mt-1 ${isCurrentUser ? 'text-blue-100' : 'text-gray-500'
                           }`}>
-                          {formatDate(comment.created_date)}
+                          {comment.user_name} | {comment.created_date}
                         </div>
                       </div>
 
@@ -939,7 +936,7 @@ const DesktopStoryDetailView: React.FC = () => {
                       {isCurrentUser && (
                         <div className="flex-shrink-0 ml-3">
                           <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                            You
+                               {(comment.user_name || 'U').charAt(0).toUpperCase()}
                           </div>
                         </div>
                       )}
