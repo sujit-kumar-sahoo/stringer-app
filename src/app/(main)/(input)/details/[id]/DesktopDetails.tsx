@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
-import { Lock, PenTool, User, ChevronDown, MapPin, Image as ImageIcon, Video, File } from 'lucide-react'
+import { Unlock, Lock, PenTool, User, ChevronDown, MapPin, Image as ImageIcon, Video, File } from 'lucide-react'
 import withAuth from '@/hoc/withAuth';
 import { getContentById, getContentByVersionId, updateContentStatus } from '@/services/contentService';
 import { useParams } from 'next/navigation';
@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useCount } from '@/context/CountContext'
 import { addComments } from '@/services/activitiesService'
 import useAuth from "@/hooks/useAuth";
+import Link from 'next/link'
 
 interface Comment {
   comment_text: string
@@ -91,6 +92,10 @@ const DesktopStoryDetailView: React.FC = () => {
   const [statusId, setStatusId] = useState('')
   const [version, setVersion] = useState('')
   const [selectedVersion, setSelectedVersion] = useState(1)
+
+  const [isLocked, setIsLocked] = useState(0);
+  const [lockedInfo, setLockedInfo] = useState<{ locked_by: number; locked_by_name: string } | null>(null);
+
   useEffect(() => {
     if (id) {
       fetchContentById()
@@ -102,6 +107,12 @@ const DesktopStoryDetailView: React.FC = () => {
       const response = await getContentById(id)
       const data = response.data
 
+      setIsLocked(data.locked || 0);
+      setLockedInfo(data.lock || {});
+      console.log('=====jjj========');
+      console.log(data.lock);
+      console.log(lockedInfo);
+      console.log('=====jjj========');
       setPriority(data.priority_text || '')
       setSelectedContentType(data.content_type_text || '')
       setTitle(data.headline || '')
@@ -389,6 +400,20 @@ const DesktopStoryDetailView: React.FC = () => {
     }
   };
 
+  const handleUnLock = async () => {
+    try {
+      const response = await updateContentStatus(id);
+      if (response?.data?.success === true) {
+        router.push(`/list/input/waitingInOutput`);
+      } else {
+        
+      }
+    } catch (error: any) {
+      console.error("Error:", error);
+      router.push(`/list/input/waitingInOutput`);
+    }
+  };
+
   const handleReturnToInputFromOutput = async () => {
     try {
       const param = { status: "8" };
@@ -508,8 +533,65 @@ const DesktopStoryDetailView: React.FC = () => {
                     </div>
                   )}
                 </div>
+                {user?.role_name == "ROLE_INPUT" && lockedInfo?.locked_by==user?.user_id && isLocked==1 && statusId=="9" && (
+                  <>
+                  <Link
+                    href={`/update/${id}`}
+                    className="relative group p-2 text-blue-600 hover:text-blue-800 bg-blue-200 hover:bg-blue-50 border-2 border-blue-500 rounded-md transition-colors ml-4 inline-flex items-center gap-1"
+                  >
+                    <PenTool size={16} />
 
+                    {/* Tooltip */}
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
+                      Edit
+                    </span>
 
+                  </Link>
+                  {/*<button
+                    type="button"
+                    onClick={handleUnLock}
+                    className="relative group p-2 text-blue-600 hover:text-blue-800 bg-blue-200 hover:bg-blue-50 border-2 border-blue-500 rounded-md transition-colors ml-4 inline-flex items-center gap-1"
+                  >
+                    <Unlock size={16} />
+
+                    
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
+                      Unlock
+                    </span>
+
+                  </button>*/}
+                  </>
+                )}
+                {user?.role_name == "ROLE_OUTPUT" && lockedInfo?.locked_by==user?.user_id && isLocked==1 && statusId=="10" && (
+                  <>
+                  <Link
+                    href={`/update/${id}`}
+                    className="relative group p-2 text-blue-600 hover:text-blue-800 bg-blue-200 hover:bg-blue-50 border-2 border-blue-500 rounded-md transition-colors ml-4 inline-flex items-center gap-1"
+                  >
+                    <PenTool size={16} />
+
+                    {/* Tooltip */}
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
+                      Edit
+                    </span>
+
+                  </Link>
+                  {/*<button
+                    type="button"
+                    onClick={handleUnLock}
+                    className="relative group p-2 text-blue-600 hover:text-blue-800 bg-blue-200 hover:bg-blue-50 border-2 border-blue-500 rounded-md transition-colors ml-4 inline-flex items-center gap-1"
+                  >
+                    <Unlock size={16} />
+
+                   
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
+                      Unlock
+                    </span>
+
+                  </button>*/}
+                  </>
+                )}
+                  
                 {user?.role_name === "ROLE_INPUT" && statusId == "2" ? (
                   String(selectedVersion) === String(version) ? (
                   <button
@@ -639,7 +721,39 @@ const DesktopStoryDetailView: React.FC = () => {
                     </button>
                   </>
                 )}
+                {user?.role_name == "ROLE_INPUT" && lockedInfo?.locked_by==user?.user_id && isLocked==1 && statusId=="9" && (
+                  <>
+                    <button
+                      onClick={handleReturnToReporterFromInput}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
+                    >
+                      RETURN TO REPORTER
+                    </button>
+                    <button
+                      onClick={handleMoveToOutput}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium transition-colors"
+                    >
+                      MOVE TO OUTPUT
+                    </button>
+                  </>
+                )}  
                 {user?.role_name === "ROLE_OUTPUT" && statusId=="3" && (
+                  <>
+                    <button
+                      onClick={handleReturnToReporterFromOutput}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium transition-colors"
+                    >
+                      RETURN TO REPORTER
+                    </button>
+                    <button
+                      onClick={handleReturnToInputFromOutput}
+                      className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 text-sm font-medium transition-colors"
+                    >
+                      RETURN TO INPUT
+                    </button>
+                  </>
+                )}
+                {user?.role_name == "ROLE_OUTPUT" && lockedInfo?.locked_by==user?.user_id && isLocked==1 && statusId=="10" && (
                   <>
                     <button
                       onClick={handleReturnToReporterFromOutput}

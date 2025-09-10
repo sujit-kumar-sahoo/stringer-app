@@ -647,7 +647,7 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
                           lineHeight: "0.76",
                           fontWeight: 500
                         }}>
-                        Locked by
+                        Locked by {activity.lock.locked_by_name}
                       </span>
                     </div>
                   </div>
