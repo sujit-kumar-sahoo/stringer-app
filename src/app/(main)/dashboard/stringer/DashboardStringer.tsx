@@ -199,24 +199,24 @@ const getCurrentMonthRange = () => {
   const applySearch = () => {
     setAppliedSearchTerm(searchTerm)
     setCurrentPage(1)
-    setIsInitialLoad(false) // Ensure we use pagination for search results
+    setIsInitialLoad(false) 
   }
 
-  const clearFilters = () => {
-    setSearchTerm('')
-    setAppliedSearchTerm('')
-    setDateFrom('')
-    setDateTo('')
-    setSelectedLocations([])
-    setSelectedPriorities([])
-    setSelectedAuthors([])
-    setCurrentPage(1)
-    setIsInitialLoad(true) // Reset to initial load state to fetch latest month data
-  }
+  // const clearFilters = () => {
+  //   setSearchTerm('')
+  //   setAppliedSearchTerm('')
+  //   setDateFrom('')
+  //   setDateTo('')
+  //   setSelectedLocations([])
+  //   setSelectedPriorities([])
+  //   setSelectedAuthors([])
+  //   setCurrentPage(1)
+  //   setIsInitialLoad(true) 
+  // }
 
   const downloadCSV = () => {
     const csvContent = [
-      ['S.No', 'Title', 'Author', 'Location', 'Priority', 'Date', 'Status', 'Reward'].join(','),
+      ['S.No', 'Title', 'Stringer', 'Location', 'Priority', 'Date', 'Status', 'Reward'].join(','),
       ...activities.map((row, index) => [
         index + 1,
         `"${row.headline}"`,
@@ -446,7 +446,7 @@ const getCurrentMonthRange = () => {
                   />
 
                   <MultiSelectDropdown
-                    label="Author"
+                    label="Stringer"
                     selectedItems={selectedAuthors}
                     options={authorOptions}
                     onToggleItem={toggleAuthorSelection}
@@ -459,7 +459,7 @@ const getCurrentMonthRange = () => {
                     displayKey="name"
                     isLoading={isLoadingAuthors}
                   />
-
+                  {/* 
                   {(appliedSearchTerm ||
                     dateFrom ||
                     dateTo ||
@@ -476,7 +476,7 @@ const getCurrentMonthRange = () => {
                           <span className="sm:hidden">Clear</span>
                         </div>
                       </button>
-                    )}
+                    )} */}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -535,7 +535,7 @@ const getCurrentMonthRange = () => {
                       Reward
                     </th>
                     <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Author
+                      Name
                     </th>
                     <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Location

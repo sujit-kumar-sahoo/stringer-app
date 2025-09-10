@@ -189,17 +189,42 @@ function Create() {
     fetchContentTypes()
   }, [])
 
-  const updateActiveFormats = () => {
-    const formats = new Set<string>()
+ const updateActiveFormats = () => {
+  const formats = new Set<string>()
+  const selection = window.getSelection()
 
-    if (document.queryCommandState('bold')) formats.add('bold')
-    if (document.queryCommandState('italic')) formats.add('italic')
-    if (document.queryCommandState('underline')) formats.add('underline')
-    if (document.queryCommandState('insertUnorderedList')) formats.add('ul')
-    if (document.queryCommandState('insertOrderedList')) formats.add('ol')
+  if (selection && selection.rangeCount > 0 && editorRef.current) {
+    // Check for lists by traversing up the DOM tree
+    let node = selection.anchorNode
+    while (node && node !== editorRef.current) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const tagName = (node as Element).tagName?.toLowerCase()
+        if (tagName === 'ul') {
+          formats.add('ul')
+        } else if (tagName === 'ol') {
+          formats.add('ol')
+        } else if (tagName === 'li') {
+          // If we're in an LI, check its parent
+          const parentTag = (node as Element).parentElement?.tagName?.toLowerCase()
+          if (parentTag === 'ul') formats.add('ul')
+          if (parentTag === 'ol') formats.add('ol')
+        }
+      }
+      node = node.parentNode
+    }
 
-    setActiveFormats(formats)
+    // Check other formats using queryCommandState
+    try {
+      if (document.queryCommandState('bold')) formats.add('bold')
+      if (document.queryCommandState('italic')) formats.add('italic')
+      if (document.queryCommandState('underline')) formats.add('underline')
+    } catch (e) {
+      // Some browsers may throw errors for certain commands
+    }
   }
+
+  setActiveFormats(formats)
+}
 
   const saveSelection = () => {
     const selection = window.getSelection()
@@ -261,45 +286,91 @@ function Create() {
 
 
   const formatText = (command: string, value?: string) => {
-    if (!editorRef.current) return
+  if (!editorRef.current) return
 
-    isUpdatingRef.current = true
-    const savedPosition = saveSelection()
+  isUpdatingRef.current = true
+  const savedPosition = saveSelection()
 
-    editorRef.current.focus()
+  editorRef.current.focus()
+  
+  // Special handling for list commands
+  if (command === 'insertUnorderedList' || command === 'insertOrderedList') {
+    document.execCommand(command, false, null)
+  } else {
     document.execCommand(command, false, value)
-
-    setTimeout(() => {
-      if (editorRef.current) {
-        const newContent = editorRef.current.innerHTML
-        const textContent = editorRef.current.textContent || ''
-
-        setEditorData(newContent)
-        setIsEmpty(textContent.trim().length === 0)
-        restoreSelection(savedPosition)
-        updateActiveFormats()
-        isUpdatingRef.current = false
-      }
-    }, 0)
   }
 
-  const insertLink = () => {
-    const url = prompt('Enter URL:')
-    if (url) {
-      formatText('createLink', url)
+  setTimeout(() => {
+    if (editorRef.current) {
+      const newContent = editorRef.current.innerHTML
+      const textContent = editorRef.current.textContent || ''
+
+      setEditorData(newContent)
+      setIsEmpty(textContent.trim().length === 0)
+      restoreSelection(savedPosition)
+      updateActiveFormats()
+      isUpdatingRef.current = false
     }
+  }, 10) // Increased timeout slightly
+}
+
+const insertLink = () => {
+  const selection = window.getSelection()
+  if (!selection || !editorRef.current) return
+
+  let selectedText = ''
+  let range: Range | null = null
+
+  if (selection.rangeCount > 0) {
+    range = selection.getRangeAt(0)
+    selectedText = range.toString().trim()
   }
 
-  const insertImage = () => {
-    const url = prompt('Enter image URL:')
-    if (url) {
-      formatText('insertImage', url)
+  const url = prompt('Enter URL:',)
+  if (!url || url.trim() === '' ) return
+
+  
+  let linkText = selectedText
+  if (!linkText) {
+    linkText = prompt('Enter link text:', url) || url
+  }
+
+  if (range) {
+    // Clear the current selection
+    range.deleteContents()
+    
+    // Create the link element
+    const link = document.createElement('a')
+    link.href = url
+    link.textContent = linkText
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    
+    // Insert the link
+    range.insertNode(link)
+    
+    // Move cursor after the link
+    range.setStartAfter(link)
+    range.setEndAfter(link)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
+  
+  setTimeout(() => {
+    if (editorRef.current) {
+      const newContent = editorRef.current.innerHTML
+      const textContent = editorRef.current.textContent || ''
+      setEditorData(newContent)
+      setIsEmpty(textContent.trim().length === 0)
+      updateActiveFormats()
     }
-  }
+  }, 10)
+}
 
-  /*const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAttachments(e.target.files)
-  }*/
+  
+
+ 
   const [loading, setLoading] = useState<null | "save" | "draft">(null);
   const isFormValid = priority &&
     selectedContentType &&
@@ -766,23 +837,16 @@ function Create() {
 
               {/* Links and Media */}
               <div className="flex items-center gap-1">
-                <ToolbarButton
+                {/* <ToolbarButton
                   onClick={insertLink}
                   title="Insert Link"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
                   </svg>
-                </ToolbarButton>
+                </ToolbarButton> */}
 
-                <ToolbarButton
-                  onClick={insertImage}
-                  title="Insert Image"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                  </svg>
-                </ToolbarButton>
+               
               </div>
 
               <div className="w-px h-6 bg-gray-300 mx-1"></div>
@@ -855,12 +919,12 @@ function Create() {
 
               onKeyUp={updateActiveFormats}
               onClick={updateActiveFormats}
+              onFocus={updateActiveFormats}
               suppressContentEditableWarning={true}
               className="min-h-[200px] p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               style={{
-                fontSize: '14px',
                 lineHeight: '1.6',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
+          fontFamily: 'system-ui, -apple-system, sans-serif'
               }}
             />
           </div>
