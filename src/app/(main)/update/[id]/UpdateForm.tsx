@@ -12,6 +12,10 @@ import TagSearch from "@/components/ui/TagSearchComponent"
 import LocationSearch from "@/components/ui/LocationSearchComponent"
 import { showAlert } from "@/utils/alert";
 import { useParams } from 'next/navigation';
+
+import { useRouter } from "next/navigation";
+import useAuth from "@/hooks/useAuth";
+
 interface FileWithMeta {
   file: File;
   previewUrl: string;
@@ -31,6 +35,20 @@ interface Attachment {
 
 
 function UpdateForm() {
+  /* ================ for permition start ================= */
+  const { user } = useAuth();
+  const router = useRouter();
+  console.log('============sujit=============');
+  console.log(user);
+  console.log('============sujit=============');
+
+  /*useEffect(() => {
+      const permissions = user?.role_data?.route?.MENU?.["Stringer"]?.["/stories/list"] || [];
+      if (!permissions.includes("add")) {
+      router.push('/');
+      }
+  }, [user, router]);*/
+  /* ================ for permition end ================= */
   const { id } = useParams() || {};
   //const { refreshCounts } = useCount();
   // text editor state
@@ -67,7 +85,8 @@ function UpdateForm() {
   const [tagOptions, setTagOptions] = useState<Tag[]>([])
  // const [isLoadingTags, setIsLoadingTags] = useState(true)
   const [currentStatus, setCurrentStatus] = useState(0)
-
+  const [createdById, setCreatedById] = useState(0)
+  
  
 
   // content type state
@@ -208,7 +227,7 @@ function UpdateForm() {
         setSelectedTag(response.data.tags[0])
         setCurrentStatus(response.data.status)
         setExistingFiles(response.data.attachments);
-
+        setCreatedById(response.data.created_by);
 
         if (editorRef.current) {
           editorRef.current.innerHTML = response.data.description || ''
@@ -352,21 +371,26 @@ function UpdateForm() {
   /*const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAttachments(e.target.files)
   }*/
-  const [loading, setLoading] = useState<null | "save" | "draft">(null);
+  const [loading, setLoading] = useState<null | "save" | "submit">(null);
   const isFormValid = priority &&
     selectedContentType &&
     selectedLocation?.name &&
     title &&
     editorData;
 
-  const handleSubmit = async (action: 'save' | 'draft') => {
+  const handleSubmit = async (action: 'save' | 'submit') => {
     setLoading(action);
 
     const attachment = files
       .filter((f) => f.uploadedUrl)
       .map((f) => ({ url: f.uploadedUrl }));
 
-    const status = currentStatus;
+    let status = currentStatus;
+    console.log(action);
+    if(action=='submit')
+    {
+      status = 2;
+    }
 
     try {
 
@@ -625,7 +649,41 @@ function UpdateForm() {
                     "Update Story"
                   )}
                 </button>
-
+                {createdById==user?.user_id && currentStatus==1 && (
+                <button
+                  onClick={() => handleSubmit("submit")}
+                  disabled={!isFormValid || loading !== null}
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors flex items-center justify-center gap-2 ${isFormValid && !loading
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-green-400 cursor-not-allowed"
+                    }`}
+                >
+                  {loading === "submit" ? (
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      ></path>
+                    </svg>
+                  ) : (
+                    "Submit Story"
+                  )}
+                </button>
+                )}
               </div>
             </div>
           </div>

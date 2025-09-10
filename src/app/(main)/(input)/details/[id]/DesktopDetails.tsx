@@ -638,20 +638,19 @@ const DesktopStoryDetailView: React.FC = () => {
                 ) : null}
                 {statusId == "1" ? (
                   String(selectedVersion) === String(version) ? (
-                  <button
-                    type="button"
-                    onClick={handleLockEdit}
+                  <Link
+                    href={`/update/${id}`}
                     className="relative group p-2 text-blue-600 hover:text-blue-800 bg-blue-200 hover:bg-blue-50 border-2 border-blue-500 rounded-md transition-colors ml-4 inline-flex items-center gap-1"
                   >
-                    <Lock size={16} />
+   
                     <PenTool size={16} />
 
                     {/* Tooltip */}
                     <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
-                      Lock & Edit
+                      Edit
                     </span>
 
-                  </button>
+                  </Link>
                 ) : (
                   <div className="p-2 text-gray-400 bg-gray-100 border-2 border-gray-300 rounded-md ml-4 inline-block cursor-not-allowed">
                     <PenTool size={16} />
