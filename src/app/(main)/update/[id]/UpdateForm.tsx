@@ -412,6 +412,10 @@ function UpdateForm() {
 
     let status = currentStatus;
     console.log(action);
+    if(user?.role_name === "ROLE_STRINGER" && (currentStatus==7 || currentStatus==11))
+    {
+      status = 2;
+    }
     if(action=='submit')
     {
       status = 2;

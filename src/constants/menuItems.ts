@@ -57,9 +57,15 @@ export const MAIN_MENU_ITEMS_STRINGER: MenuItem[] = [
       },
       { 
         id: 'input-to-stringer', 
-        label: 'Return to Stringer', 
+        label: 'Return From Input', 
         href: '/list/input/inputToStringer', 
         countKey: 'inputToStringer' 
+      },
+      { 
+        id: 'output-to-stringer', 
+        label: 'Return From Output', 
+        href: '/list/input/outputToStringer', 
+        countKey: 'outputToStringer' 
       },
       { 
         id: 'draft', 
