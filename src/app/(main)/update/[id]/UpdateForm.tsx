@@ -248,16 +248,41 @@ function UpdateForm() {
 
 
   const updateActiveFormats = () => {
-    const formats = new Set<string>()
+  const formats = new Set<string>()
+  const selection = window.getSelection()
 
-    if (document.queryCommandState('bold')) formats.add('bold')
-    if (document.queryCommandState('italic')) formats.add('italic')
-    if (document.queryCommandState('underline')) formats.add('underline')
-    if (document.queryCommandState('insertUnorderedList')) formats.add('ul')
-    if (document.queryCommandState('insertOrderedList')) formats.add('ol')
+  if (selection && selection.rangeCount > 0 && editorRef.current) {
+    // Check for lists by traversing up the DOM tree
+    let node = selection.anchorNode
+    while (node && node !== editorRef.current) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const tagName = (node as Element).tagName?.toLowerCase()
+        if (tagName === 'ul') {
+          formats.add('ul')
+        } else if (tagName === 'ol') {
+          formats.add('ol')
+        } else if (tagName === 'li') {
+          // If we're in an LI, check its parent
+          const parentTag = (node as Element).parentElement?.tagName?.toLowerCase()
+          if (parentTag === 'ul') formats.add('ul')
+          if (parentTag === 'ol') formats.add('ol')
+        }
+      }
+      node = node.parentNode
+    }
 
-    setActiveFormats(formats)
+    // Check other formats using queryCommandState
+    try {
+      if (document.queryCommandState('bold')) formats.add('bold')
+      if (document.queryCommandState('italic')) formats.add('italic')
+      if (document.queryCommandState('underline')) formats.add('underline')
+    } catch (e) {
+      // Some browsers may throw errors for certain commands
+    }
   }
+
+  setActiveFormats(formats)
+}
 
 
   const saveSelection = () => {
@@ -841,7 +866,7 @@ function UpdateForm() {
               <div className="w-px h-6 bg-gray-300 mx-1"></div>
 
               {/* Links and Media */}
-              <div className="flex items-center gap-1">
+              {/* <div className="flex items-center gap-1">
                 <ToolbarButton
                   onClick={insertLink}
                   title="Insert Link"
@@ -861,7 +886,7 @@ function UpdateForm() {
                 </ToolbarButton>
               </div>
 
-              <div className="w-px h-6 bg-gray-300 mx-1"></div>
+              <div className="w-px h-6 bg-gray-300 mx-1"></div> */}
 
               {/* Block Formats */}
               <div className="flex items-center gap-1">
