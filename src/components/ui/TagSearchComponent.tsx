@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 interface Tag {
-  id: number; // Changed from string to number
+   id: string;
   name: string;
 }
 

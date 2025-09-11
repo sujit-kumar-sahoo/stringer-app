@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
-import { Unlock, Lock, PenTool, User, ChevronDown, MapPin, Image as ImageIcon, Video, File } from 'lucide-react'
+import {  Lock, PenTool, User, ChevronDown, MapPin, Image as ImageIcon, Video, File } from 'lucide-react'
 import withAuth from '@/hoc/withAuth';
 import { getContentById, getContentByVersionId, updateContentStatus } from '@/services/contentService';
 import { useParams } from 'next/navigation';
@@ -205,7 +205,10 @@ const DesktopStoryDetailView: React.FC = () => {
   }
   const handleAddComment = async () => {
     if (!newComment.trim() || isSubmittingComment) return
-
+      if (!id) {
+    console.error('Content ID is not available')
+    return
+  }
     setIsSubmittingComment(true)
     try {
       const commentData = {
@@ -927,7 +930,7 @@ const DesktopStoryDetailView: React.FC = () => {
                         {/* Timestamp */}
                         <div className={`text-xs mt-1 ${isCurrentUser ? 'text-blue-100' : 'text-gray-500'
                           }`}>
-                          {comment.user_name} | {comment.created_date}
+                          {comment.user_name} | {formatDate(comment.created_date)}
                         </div>
                       </div>
 

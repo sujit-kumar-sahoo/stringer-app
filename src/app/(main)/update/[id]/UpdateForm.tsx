@@ -24,7 +24,7 @@ interface FileWithMeta {
   s3Key?: string;
 }
 interface Tag {
-  id: number;
+ id: string;
   name: string;
 }
 

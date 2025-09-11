@@ -21,11 +21,7 @@ interface FileWithMeta {
 interface Tag {
   id: string;
   name: string;
-  // selectedTag: Tag | null;
-  // onTagChange: (tag: Tag | null) => void;
-  // availableTags: Tag[];
-  // isLoading?: boolean;
-  // placeholder?: string;
+  
 }
 
 function Create() {
@@ -295,7 +291,7 @@ function Create() {
   
   // Special handling for list commands
   if (command === 'insertUnorderedList' || command === 'insertOrderedList') {
-    document.execCommand(command, false, null)
+    document.execCommand(command, false)
   } else {
     document.execCommand(command, false, value)
   }
