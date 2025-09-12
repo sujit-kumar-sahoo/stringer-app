@@ -1,1 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[137],{61101:(t,e,s)=>{"use strict";s.d(e,{default:()=>u});var i=s(95155),a=s(43862);let u=()=>(0,i.jsx)(a.A,{status:2,countKey:"waitList",title:"Wait List"})},88602:(t,e,s)=>{Promise.resolve().then(s.bind(s,61101))}},t=>{t.O(0,[586,55,862,441,964,358],()=>t(t.s=88602)),_N_E=t.O()}]);
