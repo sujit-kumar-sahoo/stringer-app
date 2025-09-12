@@ -27,7 +27,7 @@ const Activity: React.FC = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([])
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([])
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
-  const [locationOptions, setLocationOptions] = useState<string[]>([])
+  const [locationOptions, setLocationOptions] = useState<Array<{id: string, name: string}>>([])
   const [priorityOptions, setPriorityOptions] = useState<Array<Record<string, any>>>([])
   const [isLoadingLocations, setIsLoadingLocations] = useState(true)
   const [isLoadingPriorities, setIsLoadingPriorities] = useState(true)
@@ -93,7 +93,7 @@ const Activity: React.FC = () => {
       if (response.success && response.data && Array.isArray(response.data)) {
         const locations = response.data
           .filter((item: any) => item.location && typeof item.location === 'string')
-          .map((item: any) => ({ id: item.location.trim(), name: item.location.trim() }))
+          .map((item: any) => item.location.trim())
         setLocationOptions(locations)
       } else {
         console.error('Invalid locations response structure:', response)
@@ -195,7 +195,7 @@ const Activity: React.FC = () => {
   }
 
   const getFilteredActivities = () => {
-    let filtered = activities.filter(activity => {
+   const filtered = activities.filter(activity => {
       // Search filter
       const searchMatch = !appliedSearchTerm ||
         activity.storyTitle.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||

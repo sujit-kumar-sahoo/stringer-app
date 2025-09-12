@@ -10,7 +10,7 @@ import { useCount } from '@/context/CountContext'
 import { addComments } from '@/services/activitiesService'
 import useAuth from "@/hooks/useAuth";
 import Link from 'next/link'
-
+import Image from 'next/image';
 interface Comment {
   comment_text: string
   content_id: number
@@ -101,7 +101,7 @@ const DesktopStoryDetailView: React.FC = () => {
     if (id) {
       fetchContentById()
     }
-  }, [id])
+  }, [id ])
 
   const fetchContentById = async () => {
     try {
@@ -133,7 +133,7 @@ const DesktopStoryDetailView: React.FC = () => {
     } catch (error) {
       console.error('Error fetching content:', error)
     }
-  }
+  } 
   const handleVersionChange = async (versionNumber: any) => {
     try {
       setSelectedVersion(versionNumber)
@@ -862,7 +862,7 @@ const DesktopStoryDetailView: React.FC = () => {
                           rel="noopener noreferrer"
                           className="attachment-link"
                         >
-                          <img
+                          <Image 
                             src={`${process.env.NEXT_PUBLIC_CDN_URL}/${attachment.path}`}
                             alt={getFileName(attachment.path)}
                             className="w-full h-full object-cover rounded-lg"

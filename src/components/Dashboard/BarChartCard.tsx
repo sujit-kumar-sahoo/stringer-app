@@ -21,9 +21,9 @@ const BarChartCard: React.FC<BarChartCardProps> = ({ sampleData }) => {
     value2: true,
   });
 
-  const handleLegendClick = (dataKey: string) => {
-    setBarVisibility((prev) => ({ ...prev, [dataKey]: !prev[dataKey as keyof typeof prev] }));
-  };
+  // const handleLegendClick = (dataKey: any) => {
+  //   setBarVisibility((prev) => ({ ...prev, [dataKey]: !prev[dataKey as keyof typeof prev] }));
+  // };
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-4">
@@ -34,7 +34,7 @@ const BarChartCard: React.FC<BarChartCardProps> = ({ sampleData }) => {
           <XAxis dataKey="name" />
           <YAxis />
           <Tooltip />
-          <Legend onClick={(e) => handleLegendClick(e.dataKey)} />
+          <Legend  />
           {barVisibility.value && <Bar dataKey="value" fill="#8884d8" />}
           {barVisibility.value2 && <Bar dataKey="value2" fill="#82ca9d" />}
         </BarChart>

@@ -22,9 +22,9 @@ const MultiBarChartCard: React.FC<MultiBarChartCardProps> = ({ sampleData }) => 
     value2: true,
   });
 
-  const handleLegendClick = (dataKey: string) => {
-    setVisibility((prev) => ({ ...prev, [dataKey]: !prev[dataKey as keyof typeof prev] }));
-  };
+  // const handleLegendClick = (dataKey: string) => {
+  //   setVisibility((prev) => ({ ...prev, [dataKey]: !prev[dataKey as keyof typeof prev] }));
+  // };
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-4">
@@ -35,7 +35,7 @@ const MultiBarChartCard: React.FC<MultiBarChartCardProps> = ({ sampleData }) => 
           <XAxis dataKey="name" />
           <YAxis />
           <Tooltip />
-          <Legend onClick={(e) => handleLegendClick(e.dataKey)} />
+          <Legend  />
           {visibility.value && <Bar dataKey="value" fill="#8884d8" />}
           {visibility.value2 && <Line type="monotone" dataKey="value2" stroke="#82ca9d" />}
         </ComposedChart>

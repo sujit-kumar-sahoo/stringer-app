@@ -15,13 +15,19 @@ import { useCount } from '../../../context/CountContext';
 
 // Import constants and types
 import { 
-  MAIN_MENU_ITEMS,
+  MAIN_MENU_ITEMS_STRINGER,
+  MAIN_MENU_ITEMS_ADMIN,
+  MAIN_MENU_ITEMS_INPUT,
+  MAIN_MENU_ITEMS_OUTPUT,
   MenuItem,
   SubMenuItem,
   ColorType,
   getColorClasses,
   getActiveIndicatorClasses 
 } from '@/constants/menuItems';
+
+import { useRouter } from 'next/navigation';
+import useAuth from "@/hooks/useAuth";
 
 interface SidebarItemProps {
   item: MenuItem;
@@ -37,6 +43,38 @@ interface SectionHeaderProps {
 }
 
 const MobileSidebar: React.FC = () => {
+  /* ================ for permission start ================= */
+  const { user } = useAuth();
+  const router = useRouter();
+  console.log('============sujit=============');
+  console.log(user);
+  console.log('============sujit=============');
+  let MAIN_MENU_ITEMS: MenuItem[] = [];
+
+  if(user?.role_name === "ROLE_STRINGER") 
+  {
+    MAIN_MENU_ITEMS = MAIN_MENU_ITEMS_STRINGER;
+  }
+  else if(user?.role_name === "ROLE_INPUT") 
+  {
+    MAIN_MENU_ITEMS = MAIN_MENU_ITEMS_INPUT;
+  }
+  else if(user?.role_name === "ROLE_OUTPUT") 
+  {
+    MAIN_MENU_ITEMS = MAIN_MENU_ITEMS_OUTPUT;
+  }
+  else if(user?.role_name === "ROLE_ADMIN") 
+  {
+    MAIN_MENU_ITEMS = MAIN_MENU_ITEMS_ADMIN;
+  }
+  /*useEffect(() => {
+      const permissions = user?.role_data?.route?.MENU?.["Stringer"]?.["/stories/list"] || [];
+      if (!permissions.includes("add")) {
+      router.push('/');
+      }
+  }, [user, router]);*/
+  /* ================ for permission end ================= */
+
   const { isOpen, toggleSidebar } = useSidebar();
   const { counts, isLoading, refreshCounts } = useCount();
   const pathname = usePathname();

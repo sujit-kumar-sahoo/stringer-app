@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import DesktopDetails from './DesktopDetails'
-import MobileDetails from './MobileDetails'
+//import MobileDetails from './MobileDetails'
 
 
 function useIsMobile() {
@@ -29,7 +29,7 @@ export default function DetailsPage() {
   const isMobile = useIsMobile()
 
 
-  const DetailComponent = isMobile ? MobileDetails : DesktopDetails
+  const DetailComponent = isMobile ? DesktopDetails : DesktopDetails
 
   return <DetailComponent />
 }

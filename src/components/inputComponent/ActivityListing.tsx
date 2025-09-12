@@ -13,18 +13,12 @@ import { fetchActivities, Activity, FetchActivitiesParams } from '@/services/pag
 import { useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 interface ActivityListingProps {
-  status: any;
+  status: number;
   countKey: keyof CountData; 
   title?: string;
 }
 
-const ActivityListing: React.FC<ActivityListingProps> = ({
-
-  
-  status,
-  countKey
- 
-}) => {
+const ActivityListing: React.FC<ActivityListingProps> = ({ status, countKey, title }) => {
     /* ================ for permition start ================= */
   const { user } = useAuth();
   const router = useRouter();
@@ -784,4 +778,4 @@ const ActivityListing: React.FC<ActivityListingProps> = ({
   )
 }
 
-export default withAuth(ActivityListing as any);
+export default ActivityListing;
