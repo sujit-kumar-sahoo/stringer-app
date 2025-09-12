@@ -7,7 +7,7 @@ import { getContentTypes } from '@/services/contentTypeService';
 import { getTags } from '@/services/tagService'
 import { updateContent, getContentById } from '@/services/contentService';
 import { getPresignedUrl } from "@/services/uploadService";
-//import { useCount } from '@/context/CountContext'
+import { useCount } from '@/context/CountContext'
 import TagSearch from "@/components/ui/TagSearchComponent"
 import LocationSearch from "@/components/ui/LocationSearchComponent"
 import { showAlert } from "@/utils/alert";
@@ -50,7 +50,7 @@ function UpdateForm() {
   }, [user, router]);*/
   /* ================ for permition end ================= */
   const { id } = useParams() || {};
-  //const { refreshCounts } = useCount();
+  const { refreshCounts } = useCount();
   // text editor state
   const [editorData, setEditorData] = useState<string>('')
   const [isEditorReady, setIsEditorReady] = useState(false)
@@ -437,8 +437,10 @@ function UpdateForm() {
       const authResult = await updateContent(formData, id);
 
       if (authResult.success) {
-
-        showAlert("Success", "Update successfully!", "success");
+        await refreshCounts();
+         showAlert("Success", "Update successfully!", "success");
+         router.push(`/list/input/waitList`);
+       
 
       } else {
 
@@ -463,6 +465,7 @@ function UpdateForm() {
       editorRef.current.innerHTML = ''
     }
     setIsEmpty(true)
+    router.push(`/list/input/waitList`);
   }
   //}
 

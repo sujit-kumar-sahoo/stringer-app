@@ -6,7 +6,7 @@ import { getLocations } from '@/services/locationService';
 import { fetchActivities, Activity, FetchActivitiesParams } from '@/services/paginationService'
 import { getUser } from '@/services/userService';
 import React, { useState, useEffect } from 'react'
-import { Calendar, Download, ChevronDown, X, FileText } from 'lucide-react'
+import { Calendar, Download, ChevronDown, FileText } from 'lucide-react'
 
 const Dashboardstringer: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -160,7 +160,7 @@ const getCurrentMonthRange = () => {
     }
   }
 
-  // Effects
+  
   useEffect(() => {
     fetchLocations()
     fetchPriorities()
@@ -202,17 +202,7 @@ const getCurrentMonthRange = () => {
     setIsInitialLoad(false) 
   }
 
-  // const clearFilters = () => {
-  //   setSearchTerm('')
-  //   setAppliedSearchTerm('')
-  //   setDateFrom('')
-  //   setDateTo('')
-  //   setSelectedLocations([])
-  //   setSelectedPriorities([])
-  //   setSelectedAuthors([])
-  //   setCurrentPage(1)
-  //   setIsInitialLoad(true) 
-  // }
+ 
 
   const downloadCSV = () => {
     const csvContent = [
@@ -459,24 +449,7 @@ const getCurrentMonthRange = () => {
                     displayKey="name"
                     isLoading={isLoadingAuthors}
                   />
-                  {/* 
-                  {(appliedSearchTerm ||
-                    dateFrom ||
-                    dateTo ||
-                    selectedLocations.length > 0 ||
-                    selectedPriorities.length > 0 ||
-                    selectedAuthors.length > 0) && (
-                      <button
-                        onClick={clearFilters}
-                        className="px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded-2xl hover:bg-red-50 transition-colors bg-red-100"
-                      >
-                        <div className="flex items-center gap-2">
-                          <X size={16} />
-                          <span className="hidden sm:inline">Clear Filters</span>
-                          <span className="sm:hidden">Clear</span>
-                        </div>
-                      </button>
-                    )} */}
+                
                 </div>
                 <div className="flex gap-2">
                   <button
