@@ -1,0 +1,13 @@
+name: Run Local Script on Self-Hosted Runner
+
+on:
+  workflow_dispatch:   # trigger manually
+
+jobs:
+  run-script:
+    runs-on: self-hosted
+    steps:
+      - name: Run existing script
+        run: |
+          cd /var/www/otvfiles/scripts/   # path where script lives
+          ./superapp_dashboard_nextjs_deploy.sh
