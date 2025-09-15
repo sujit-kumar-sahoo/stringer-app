@@ -16,7 +16,7 @@ export const signIn = async (formData: FormData): Promise<ApiResponse> => {
     const encodedPayload = encodePayload(payloadObj);
 
     const response = await api.post(
-                                      '/api/auth/login/', 
+                                      '/api/auth/login', 
                                       { data: encodedPayload }, 
                                       {
                                         headers: {
